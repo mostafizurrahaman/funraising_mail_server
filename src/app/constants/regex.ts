@@ -1,3 +1,5 @@
 /* eslint-disable no-useless-escape */
 export const URL_REGEX =
    /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
+
+export const GERMANY_PHONE_NUMBER_REGEX = /^(?:\+49|0)(15\d|16\d|17\d)\d{7,8}$/;

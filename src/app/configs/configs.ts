@@ -15,6 +15,9 @@ const envValidationSchema = z.object({
       .min(4, {
          error: "Port length should be 4 char like 5000,  8080",
       }),
+   databaseUrl: z.string({
+      error: "Database is required!",
+   }),
    // JWT VALIDATION :
    accessTokenSecret: z.string({
       error: "Access token secret is required!",
@@ -45,6 +48,7 @@ dotenv.config({
 const envs: TConfigType = {
    nodeEnv: process.env.NODE_ENV!,
    port: process.env.PORT!,
+   databaseUrl: process.env.DATABASE_URL!,
 
    // JWT FIELDS:
    accessTokenSecret: process.env.ACCESS_TOKEN_SECRET!,
@@ -60,7 +64,7 @@ const validateEnv = () => {
 
    console.log("ZOD ERRORS", error);
 
-   return data;
+   return data as TConfigType;
 };
 
 export const configs = validateEnv();
