@@ -1,7 +1,7 @@
 export const AuthRole = {
    ADMIN: "admin",
    SUPER_ADMIN: "super_admin",
-   OWNER: "owner",
+   COMPANY: "company",
    DRIVER: "driver",
 } as const;
 
