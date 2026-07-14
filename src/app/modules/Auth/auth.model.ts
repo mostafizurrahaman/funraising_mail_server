@@ -34,7 +34,7 @@ const authSchema = new Schema<IAuthDoc, IAuthModel>(
       role: {
          type: String,
          enum: AuthRoleValues,
-         default: AuthRole.OWNER,
+         default: AuthRole.COMPANY,
       },
       status: {
          type: String,

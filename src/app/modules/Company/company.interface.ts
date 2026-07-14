@@ -1,25 +1,24 @@
-// id string [pk]
-//   owner string [ref: > User.id]              // The User who created/owns this provider account
-//   companyName string
-//   companyCode string [unique]
-//   qrCode string [unique]
-//   city string
-//   serviceArea string
-//   fleetSize number
-//   notes text
-//   ratePerRide number [default: 2.0]          // Custom commission rate per ride for this company
-//   createdAt timestamp
-//   updatedAt timestamp
+import { Document, Types } from "mongoose";
+import type { geoLocationType } from "./company.constants";
 
-import { Types } from "mongoose";
+export type TGeoLocationType =
+   (typeof geoLocationType)[keyof typeof geoLocationType];
+
+export interface IGeoJSONPoint {
+   type: TGeoLocationType;
+   coordinates: [number, number]; // [Longitude, Latitude]
+}
 
 interface ICompany {
    user: Types.ObjectId;
    companyName: string;
    companyCode: string;
-   qrCode: string;
    city: string;
-   serviceArea: string;
+   address?: string;
+   serviceArea: IGeoJSONPoint;
    fleetSize: number;
-   notes: string;
+   radiusKm: number;
+   notes?: string;
 }
+
+export interface ICompanyDoc extends ICompany, Document {}
