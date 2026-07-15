@@ -41,7 +41,7 @@ surchargeSchema.index(
    },
    {
       unique: true,
-      name: "unique_price_label_per_company",
+      name: "uniq_comp_price_lbl",
    },
 );
 
