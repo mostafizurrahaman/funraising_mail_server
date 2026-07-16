@@ -1,5 +1,5 @@
 export const Currency = {
-   EUR: "EUR",
+   EUR: "eur",
 } as const;
 
 export const CurrencyValues = Object.values(Currency);
