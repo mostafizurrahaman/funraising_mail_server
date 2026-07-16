@@ -6,7 +6,7 @@ const invoiceSchema = new Schema<IInvoiceDoc>(
    {
       user: {
          type: Schema.Types.ObjectId,
-         ref: "Company",
+         ref: "Auth",
          required: true,
          index: true,
       },
