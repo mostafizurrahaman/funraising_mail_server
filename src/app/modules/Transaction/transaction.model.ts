@@ -1,9 +1,5 @@
 import { model, Schema } from "mongoose";
-import type {
-   ITransaction,
-   ITransactionDoc,
-   ITransactionModel,
-} from "./transaction.interface";
+import type { ITransactionDoc } from "./transaction.interface";
 import { Currency, CurrencyValues } from "../Bank";
 import {
    PaymentGateway,
@@ -12,7 +8,7 @@ import {
    TransactionStatusValues,
 } from "./transaction.constant";
 
-const transactionSchema = new Schema<ITransactionDoc, ITransactionModel>(
+const transactionSchema = new Schema<ITransactionDoc>(
    {
       booking: {
          type: Schema.Types.ObjectId,
@@ -50,7 +46,7 @@ const transactionSchema = new Schema<ITransactionDoc, ITransactionModel>(
    },
 );
 
-export const Transaction = model<ITransactionDoc, ITransactionModel>(
+export const Transaction = model<ITransactionDoc>(
    "Transaction",
    transactionSchema,
 );

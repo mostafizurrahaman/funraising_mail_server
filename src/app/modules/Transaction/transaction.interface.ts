@@ -15,5 +15,3 @@ export interface ITransaction {
 }
 
 export interface ITransactionDoc extends ITransaction, Document {}
-
-export interface ITransactionModel extends Model<ITransactionDoc> {}
