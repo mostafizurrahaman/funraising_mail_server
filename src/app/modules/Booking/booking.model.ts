@@ -17,7 +17,10 @@ import {
    PrescriptionReasonValues,
    VehicleTypeValues,
 } from "./booking.constant";
-import { geoLocationType } from "../Company/company.constants";
+import {
+   geoLocationType,
+   geoLocationTypeValues,
+} from "../Company/company.constants";
 
 const bookingSchema = new Schema<IBookingDoc>(
    {
@@ -53,6 +56,7 @@ const bookingSchema = new Schema<IBookingDoc>(
       pickupLocation: {
          type: {
             type: String,
+            enum: geoLocationTypeValues,
             default: geoLocationType.Point,
             required: true,
          },
@@ -68,6 +72,7 @@ const bookingSchema = new Schema<IBookingDoc>(
       destinationLocation: {
          type: {
             type: String,
+            enum: geoLocationTypeValues,
             default: geoLocationType.Point,
             required: true,
          },
