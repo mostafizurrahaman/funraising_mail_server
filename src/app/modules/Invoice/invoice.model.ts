@@ -22,6 +22,15 @@ const invoiceSchema = new Schema<IInvoiceDoc>(
          required: true,
          min: 0,
       },
+      bookings: {
+         type: [
+            {
+               type: Schema.Types.ObjectId,
+               ref: "Booking",
+               required: true,
+            },
+         ],
+      },
       period: {
          type: String,
          required: true,

@@ -12,6 +12,7 @@ export interface IInvoice {
    paidAt: Date;
    status: TInvoiceStatusType;
    invoiceUrl: string;
+   bookings: Types.ObjectId[];
 }
 
 export interface IInvoiceDoc extends IInvoice, Document {}
