@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 import path from "path";
 import z from "zod";
 
+import { requiredString } from "../utils";
+
 //zod Validation for Configs
 
 const envValidationSchema = z.object({
@@ -37,6 +39,13 @@ const envValidationSchema = z.object({
    resetTokenExpiresIn: z.string({
       error: "Reset token secret is required!",
    }),
+
+   passwordSaltRound: z.number({
+      error: "Password salt round is required!",
+   }),
+   cloudinaryApiKey: requiredString("cloudinaryApiKey"),
+   cloudinaryApiSecret: requiredString("cloudinaryApiSecret"),
+   cloudinaryCloudName: requiredString("cloudinaryCloudName"),
 });
 
 type TConfigType = z.infer<typeof envValidationSchema>;
@@ -57,6 +66,10 @@ const envs: TConfigType = {
    refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN!,
    resetTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
    resetTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN!,
+   passwordSaltRound: Number(process.env.PASSWORD_SALT_ROUND),
+   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY!,
+   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET!,
+   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME!,
 };
 
 const validateEnv = () => {

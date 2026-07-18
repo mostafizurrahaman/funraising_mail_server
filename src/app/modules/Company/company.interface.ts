@@ -18,7 +18,7 @@ interface ICompany {
    serviceArea: IGeoJSONPoint;
    fleetSize: number;
    radiusKm: number;
-   notes?: string;
+   note?: string;
 }
 
 export interface ICompanyDoc extends ICompany, Document {}

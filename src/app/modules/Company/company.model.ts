@@ -2,19 +2,25 @@ import { model, Schema, Types } from "mongoose";
 import type { ICompanyDoc, IGeoJSONPoint } from "./company.interface";
 import { geoLocationType, geoLocationTypeValues } from "./company.constants";
 
-export const serviceAreaSchema = new Schema<IGeoJSONPoint>({
-   type: {
-      type: String,
-      enum: geoLocationTypeValues,
-      required: true,
-      default: geoLocationType.Point,
-   },
+export const serviceAreaSchema = new Schema<IGeoJSONPoint>(
+   {
+      type: {
+         type: String,
+         enum: geoLocationTypeValues,
+         required: true,
+         default: geoLocationType.Point,
+      },
 
-   coordinates: {
-      type: [Number],
-      required: true,
+      coordinates: {
+         type: [Number],
+         required: true,
+      },
    },
-});
+   {
+      _id: false,
+      versionKey: false,
+   },
+);
 
 const companySchema = new Schema<ICompanyDoc>(
    {
@@ -39,7 +45,10 @@ const companySchema = new Schema<ICompanyDoc>(
       address: {
          type: String,
       },
-      serviceArea: serviceAreaSchema,
+      serviceArea: {
+         type: serviceAreaSchema,
+         required: true,
+      },
       radiusKm: {
          type: Number,
          required: true,
@@ -50,7 +59,7 @@ const companySchema = new Schema<ICompanyDoc>(
          required: true,
          min: 1,
       },
-      notes: {
+      note: {
          type: String,
       },
    },
@@ -59,5 +68,9 @@ const companySchema = new Schema<ICompanyDoc>(
       versionKey: false,
    },
 );
+
+companySchema.index({
+   serviceArea: "2dsphere",
+});
 
 export const Company = model<ICompanyDoc>("Company", companySchema);

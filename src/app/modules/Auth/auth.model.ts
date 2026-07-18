@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import type { IAuth, IAuthDoc, IAuthModel } from "./auth.interface";
+import type { IAuthDoc, IAuthModel } from "./auth.interface";
 import {
    AuthRole,
    AuthRoleValues,
@@ -30,6 +30,7 @@ const authSchema = new Schema<IAuthDoc, IAuthModel>(
       },
       profileImage: {
          type: String,
+         default: null,
       },
       role: {
          type: String,
@@ -68,6 +69,11 @@ authSchema.statics.isTokenStale = function (
    // Compare
    return jwtIssuedTime < passwordChangedAt.getTime();
 };
+
+authSchema.post("save", function (doc, next) {
+   doc.passwordHash = "";
+   next();
+});
 
 // ? Design the model for the AuthSchema:
 

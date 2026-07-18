@@ -4,6 +4,7 @@ import cors from "cors";
 import { configs } from "@/app/configs";
 import { notFound } from "./app/middlewares";
 import globalErrorHandler from "./app/middlewares/global-error-handler";
+import { allRoutes } from "./app/routes";
 
 // Create an app :
 
@@ -34,6 +35,8 @@ app.get("/health-check", (req, res) => {
       message: `Your server health is okay!`,
    });
 });
+
+app.use("/api/v1", allRoutes);
 
 // Not found page:
 app.use(notFound);
