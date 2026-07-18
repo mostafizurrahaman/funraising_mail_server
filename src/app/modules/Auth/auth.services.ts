@@ -1,9 +1,9 @@
 import { AppError } from "@/app/errors";
 import { Auth } from "./auth.model";
-import type { TSignupPayload } from "./auth.validation";
+import type { TLoginPayload, TSignupPayload } from "./auth.validation";
 import httpStatus, { status } from "http-status";
 import { AuthRole, AuthStatus } from "./auth.constant";
-import { hashPassword } from "@/app/utils/password";
+import { comparePassword, hashPassword } from "@/app/utils/password";
 import { configs } from "@/app/configs";
 import type { TMulterFile } from "@/app/types/multer.types";
 import uploadFileIntoCloudinary from "@/app/utils/upload-file-into-cloudinary";
@@ -12,6 +12,8 @@ import { Company } from "../Company/company.model";
 import { generateUniqueCompanyCode } from "../Company/company.utils";
 import { geoLocationType } from "../Company/company.constants";
 import { deleteFileByUrl } from "@/app/utils/delete-file-from-cloudinary";
+import type { IJwtUserPayload } from "@/app/types";
+import { createToken } from "@/app/utils";
 
 // ? Organization Signup
 const signupIntoDB = async (
@@ -69,7 +71,7 @@ const signupIntoDB = async (
             case AuthStatus.REJECTED:
                throw new AppError(
                   httpStatus.CONFLICT,
-                  "Your previous application was rejected. Please submit a new application.",
+                  "Your account has been rejected by admin. Please contact support.",
                );
          }
       }
@@ -178,6 +180,84 @@ const signupIntoDB = async (
    }
 };
 
+// ? Login
+const organizationLogin = async (payload: TLoginPayload) => {
+   const { email, password } = payload;
+
+   // ? Check is user exists ?
+   const existingUser = await Auth.findOne({
+      email,
+   }).select("+passwordHash");
+
+   if (!existingUser) {
+      throw new AppError(httpStatus.NOT_FOUND, "User doesn't exists");
+   }
+
+   // ? Match  the password:
+   const isPasswordMatched = await comparePassword(
+      password,
+      existingUser.passwordHash,
+   );
+   if (!isPasswordMatched) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Credential not matched!");
+   }
+
+   // ?? Check is this user organization:
+   if (existingUser?.role !== "company") {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "Only company accounts can access the organization portal.",
+      );
+   }
+
+   // ? check is user statuses ?:
+   if (existingUser.status === AuthStatus.PENDING) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "Your account is pending approval. Please wait for admin verification.",
+      );
+   }
+
+   if (
+      existingUser.status === AuthStatus.BLOCKED ||
+      existingUser.status === AuthStatus.REJECTED
+   ) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         `Your account has been ${existingUser.status?.toLowerCase()}. Please contact support.`,
+      );
+   }
+
+   // ?? Jwt payload:
+   const jwtPayload: IJwtUserPayload = {
+      _id: existingUser?._id?.toString(),
+      name: existingUser.name!,
+      email: existingUser?.email,
+      phone: existingUser?.phone!,
+      profileImage: existingUser.profileImage!,
+      role: existingUser.status!,
+      status: existingUser.status!,
+   };
+
+   // ?? Generate the access token and refresh token:
+   const accessToken = createToken(
+      jwtPayload,
+      configs.accessTokenSecret,
+      configs.accessTokenExpiresIn,
+   );
+   const refreshToken = createToken(
+      jwtPayload,
+      configs.refreshTokenSecret,
+      configs.refreshTokenExpiresIn,
+   );
+
+   return {
+      accessToken,
+      refreshToken,
+   };
+};
+
 export const AuthServices = {
    signupIntoDB,
+   organizationLogin,
 };

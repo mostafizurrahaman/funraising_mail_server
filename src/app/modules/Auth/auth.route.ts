@@ -6,6 +6,7 @@ import { AuthValidationSchema } from "./auth.validation";
 
 const router = express.Router();
 
+// Login Payload:
 router.post(
    "/organization-signup",
    multerFactory({
@@ -14,6 +15,12 @@ router.post(
    }).single("profileImage"),
    validateRequest(AuthValidationSchema.signupSchema),
    AuthController.signUp,
+);
+
+router.post(
+   "/organization-login",
+   validateRequest(AuthValidationSchema.loginSchema),
+   AuthController.organizationLogin,
 );
 
 export const authRoutes = router;

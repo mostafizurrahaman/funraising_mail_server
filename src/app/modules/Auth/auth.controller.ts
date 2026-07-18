@@ -1,6 +1,7 @@
-import { catchAsync, sendResponse } from "@/app/utils";
+import { catchAsync, sendResponse, setCookie } from "@/app/utils";
 import httpStatus from "http-status";
 import { AuthServices } from "./auth.services";
+
 // 1. Signup (Owner)
 const signUp = catchAsync(async (req, res) => {
    const payload = req.body;
@@ -16,6 +17,29 @@ const signUp = catchAsync(async (req, res) => {
    });
 });
 
+// ? Organization Login:
+const organizationLogin = catchAsync(async (req, res) => {
+   const payload = req.body;
+
+   const result = await AuthServices.organizationLogin(payload);
+
+   setCookie(res, "refreshToken", result.refreshToken, {
+      httpOnly: false,
+      secure: true,
+      maxAge: 60 * 60 * 24 * 1000 * 365,
+      sameSite: "none",
+      path: "/",
+   });
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Organization logged in successfully!",
+      data: result,
+   });
+});
+
 export const AuthController = {
    signUp,
+   organizationLogin,
 };

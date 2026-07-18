@@ -27,6 +27,7 @@ const authSchema = new Schema<IAuthDoc, IAuthModel>(
       passwordHash: {
          type: String,
          required: true,
+         select: 0,
       },
       profileImage: {
          type: String,
@@ -72,6 +73,10 @@ authSchema.statics.isTokenStale = function (
 
 authSchema.post("save", function (doc, next) {
    doc.passwordHash = "";
+   next();
+});
+
+authSchema.post("find", function (next) {
    next();
 });
 

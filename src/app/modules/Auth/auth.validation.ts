@@ -11,6 +11,7 @@ import {
 } from "@/app/utils";
 import z from "zod";
 
+// ?? 1. Signup
 const signupSchema = z.object({
    body: z
       .object({
@@ -91,8 +92,19 @@ const signupSchema = z.object({
       }),
 });
 
+// ?? Login **
+const loginSchema = z.object({
+   body: z.object({
+      email: requiredEmail("Email"),
+      password: requiredString("Password"),
+   }),
+});
+
 export const AuthValidationSchema = {
    signupSchema,
+   loginSchema,
 };
 
 export type TSignupPayload = z.infer<typeof signupSchema.shape.body>;
+
+export type TLoginPayload = z.infer<typeof loginSchema.shape.body>;
