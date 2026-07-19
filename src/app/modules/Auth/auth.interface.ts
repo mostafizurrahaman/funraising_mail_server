@@ -11,7 +11,7 @@ export interface IAuth {
    email: string;
    phone?: string;
    profileImage?: string;
-   isVerified?: string;
+   isVerified?: boolean;
    status: TAuthStatus;
    role: TAuthRole;
    passwordHash: string;

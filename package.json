@@ -4,7 +4,7 @@
    "type": "module",
    "private": true,
    "scripts": {
-      "prod:dev": "tsx watch ./src/server.ts",
+      "prod:dev": "tsx --watch ./src/server.ts",
       "prod:start": "node ./dist/server.js",
       "build": "tsc "
    },

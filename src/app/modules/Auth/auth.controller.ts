@@ -39,7 +39,29 @@ const organizationLogin = catchAsync(async (req, res) => {
    });
 });
 
+const adminLogin = catchAsync(async (req, res) => {
+   const payload = req.body;
+
+   const result = await AuthServices.adminLogin(payload);
+
+   setCookie(res, "refreshToken", result.refreshToken, {
+      httpOnly: false,
+      secure: true,
+      maxAge: 60 * 60 * 24 * 1000 * 365,
+      sameSite: "none",
+      path: "/",
+   });
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Admin logged in successfully!",
+      data: result,
+   });
+});
+
 export const AuthController = {
    signUp,
    organizationLogin,
+   adminLogin,
 };

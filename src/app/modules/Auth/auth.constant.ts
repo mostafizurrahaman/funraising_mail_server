@@ -5,6 +5,13 @@ export const AuthRole = {
    DRIVER: "driver",
 } as const;
 
+export const AuthPermission = {
+   [AuthRole.SUPER_ADMIN]: 4,
+   [AuthRole.ADMIN]: 3,
+   [AuthRole.COMPANY]: 2,
+   [AuthRole.DRIVER]: 1,
+};
+
 export const AuthStatus = {
    PENDING: "pending", // ausstehend
    ACTIVE: "active", // freigegeben

@@ -3,6 +3,7 @@ import path from "path";
 import z from "zod";
 
 import { requiredString } from "../utils";
+import { GERMANY_PHONE_NUMBER_REGEX } from "../constants";
 
 //zod Validation for Configs
 
@@ -46,6 +47,17 @@ const envValidationSchema = z.object({
    cloudinaryApiKey: requiredString("cloudinaryApiKey"),
    cloudinaryApiSecret: requiredString("cloudinaryApiSecret"),
    cloudinaryCloudName: requiredString("cloudinaryCloudName"),
+
+   superAdminName: requiredString("Super Admin Name"),
+   superAdminEmail: requiredString("Super Admin Email"),
+   superAdminPhone: z
+      .string({
+         error: `phone number should be  string!`,
+      })
+      .regex(GERMANY_PHONE_NUMBER_REGEX, {
+         error: "Phone number is invalid!",
+      }),
+   superAdminPassword: requiredString("Password"),
 });
 
 type TConfigType = z.infer<typeof envValidationSchema>;
@@ -70,6 +82,12 @@ const envs: TConfigType = {
    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY!,
    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET!,
    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+
+   // SUPER Admin  env:
+   superAdminName: process.env.SUPER_ADMIN_NAME!,
+   superAdminEmail: process.env.SUPER_ADMIN_EMAIL!,
+   superAdminPhone: process.env.SUPER_ADMIN_PHONE!,
+   superAdminPassword: process.env.SUPER_ADMIN_PASSWORD!,
 };
 
 const validateEnv = () => {

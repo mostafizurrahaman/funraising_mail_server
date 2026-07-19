@@ -2,6 +2,7 @@ import app from "./app";
 import { configs } from "./app/configs";
 import { connectDB } from "./app/utils/connect-db";
 import { Server } from "http";
+import { seedSuperAdmin } from "./app/utils/seed-super-admin";
 let server: Server;
 //  boostrap function :
 const boostrap = async () => {
@@ -9,6 +10,8 @@ const boostrap = async () => {
       await connectDB(configs?.databaseUrl);
 
       console.log("✅ Database connected  successfully!");
+
+      await seedSuperAdmin();
       // server listen :
       server = app.listen(configs?.port, () => {
          console.log(`🧑‍🚀🚀 Server is running on ${configs?.port}`);

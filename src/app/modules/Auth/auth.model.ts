@@ -44,7 +44,7 @@ const authSchema = new Schema<IAuthDoc, IAuthModel>(
          default: AuthStatus.PENDING,
       },
       isVerified: {
-         type: String,
+         type: Boolean,
          default: false,
       },
    },

@@ -23,4 +23,10 @@ router.post(
    AuthController.organizationLogin,
 );
 
+router.post(
+   "/admin-login",
+   validateRequest(AuthValidationSchema.loginSchema),
+   AuthController.adminLogin,
+);
+
 export const authRoutes = router;
