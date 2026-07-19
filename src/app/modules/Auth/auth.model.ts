@@ -47,6 +47,9 @@ const authSchema = new Schema<IAuthDoc, IAuthModel>(
          type: Boolean,
          default: false,
       },
+      passwordChangedAt: {
+         type: Date,
+      },
    },
 
    {

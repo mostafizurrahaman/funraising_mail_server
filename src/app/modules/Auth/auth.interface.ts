@@ -15,6 +15,7 @@ export interface IAuth {
    status: TAuthStatus;
    role: TAuthRole;
    passwordHash: string;
+   passwordChangedAt: Date;
 }
 
 export interface IAuthDoc extends IAuth, Document {}
