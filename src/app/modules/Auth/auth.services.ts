@@ -180,7 +180,7 @@ const signupIntoDB = async (
    }
 };
 
-// ? Login
+// ? Login:
 const organizationLogin = async (payload: TLoginPayload) => {
    const { email, password } = payload;
 
@@ -254,9 +254,12 @@ const organizationLogin = async (payload: TLoginPayload) => {
    return {
       accessToken,
       refreshToken,
+      email: existingUser.email,
+      role: existingUser?.role,
    };
 };
 
+// ?? Admin login:
 const adminLogin = async (payload: TLoginPayload) => {
    const { email, password } = payload;
 
@@ -278,7 +281,7 @@ const adminLogin = async (payload: TLoginPayload) => {
       throw new AppError(httpStatus.BAD_REQUEST, "Credential not matched!");
    }
 
-   // ?? Check is this user organization:
+   // ?? Check is this user admin or super admin:
    if (AuthPermission?.[existingUser.role] < AuthPermission[AuthRole.ADMIN]) {
       throw new AppError(
          httpStatus.FORBIDDEN,
@@ -330,6 +333,87 @@ const adminLogin = async (payload: TLoginPayload) => {
    return {
       accessToken,
       refreshToken,
+      email: existingUser.email,
+      role: existingUser?.role,
+   };
+};
+
+// ?? Admin login:
+const driverLogin = async (payload: TLoginPayload) => {
+   const { email, password } = payload;
+
+   // ? Check is user exists ?
+   const existingUser = await Auth.findOne({
+      email,
+   }).select("+passwordHash");
+
+   if (!existingUser) {
+      throw new AppError(httpStatus.NOT_FOUND, "User doesn't exists");
+   }
+
+   // ? Match  the password:
+   const isPasswordMatched = await comparePassword(
+      password,
+      existingUser.passwordHash,
+   );
+   if (!isPasswordMatched) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Credential not matched!");
+   }
+
+   // ?? Check is this user driver?:
+   if (AuthPermission?.[existingUser.role] < AuthPermission[AuthRole.DRIVER]) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "You don't have permission to login into this portal.",
+      );
+   }
+
+   // ? check is user statuses ?:
+   if (existingUser.status === AuthStatus.PENDING) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "Your account is pending approval. Please wait for admin verification.",
+      );
+   }
+
+   if (
+      existingUser.status === AuthStatus.BLOCKED ||
+      existingUser.status === AuthStatus.REJECTED
+   ) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         `Your account has been ${existingUser.status?.toLowerCase()}. Please contact support.`,
+      );
+   }
+
+   // ?? Jwt payload:
+   const jwtPayload: IJwtUserPayload = {
+      _id: existingUser?._id?.toString(),
+      name: existingUser.name!,
+      email: existingUser?.email,
+      phone: existingUser?.phone!,
+      profileImage: existingUser.profileImage!,
+      role: existingUser.status!,
+      status: existingUser.status!,
+   };
+
+   // ?? Generate the access token and refresh token:
+   const accessToken = createToken(
+      jwtPayload,
+      configs.accessTokenSecret,
+      configs.accessTokenExpiresIn,
+   );
+   const refreshToken = createToken(
+      jwtPayload,
+      configs.refreshTokenSecret,
+      configs.refreshTokenExpiresIn,
+   );
+
+   return {
+      accessToken,
+      refreshToken,
+      email: existingUser.email,
+      role: existingUser?.role,
    };
 };
 
@@ -337,4 +421,5 @@ export const AuthServices = {
    signupIntoDB,
    organizationLogin,
    adminLogin,
+   driverLogin,
 };

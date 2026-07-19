@@ -1,4 +1,4 @@
-\import { catchAsync, sendResponse, setCookie } from "@/app/utils";
+import { catchAsync, sendResponse, setCookie } from "@/app/utils";
 import httpStatus from "http-status";
 import { AuthServices } from "./auth.services";
 
@@ -60,10 +60,32 @@ const adminLogin = catchAsync(async (req, res) => {
    });
 });
 
+const driverLogin = catchAsync(async (req, res) => {
+   const payload = req.body;
+
+   const result = await AuthServices.driverLogin(payload);
+
+   setCookie(res, "refreshToken", result.refreshToken, {
+      httpOnly: false,
+      secure: true,
+      maxAge: 60 * 60 * 24 * 1000 * 365,
+      sameSite: "none",
+      path: "/",
+   });
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Driver logged in successfully!",
+      data: result,
+   });
+});
+
 // ?? Sign up  otp verification
 
 export const AuthController = {
    signUp,
    organizationLogin,
    adminLogin,
+   driverLogin,
 };

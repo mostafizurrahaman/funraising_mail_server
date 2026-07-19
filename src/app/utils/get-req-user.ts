@@ -3,6 +3,7 @@ import type { Request } from "express";
 import type { IJwtUserPayload } from "../types/jwt.types";
 
 export const getUserFromRequest = (req: Request) => {
-   const user = (req as any).user as IJwtUserPayload;
+   const user = req.user;
+
    return user;
 };

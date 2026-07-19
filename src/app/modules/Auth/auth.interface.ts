@@ -1,6 +1,5 @@
 import type { Document, Model } from "mongoose";
 import type { AuthRole, AuthStatus } from "./auth.constant";
-import { extend } from "zod/mini";
 
 export type TAuthRole = (typeof AuthRole)[keyof typeof AuthRole];
 

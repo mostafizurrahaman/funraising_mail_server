@@ -29,4 +29,10 @@ router.post(
    AuthController.adminLogin,
 );
 
+router.post(
+   "/driver-login",
+   validateRequest(AuthValidationSchema.loginSchema),
+   AuthController.driverLogin,
+);
+
 export const authRoutes = router;

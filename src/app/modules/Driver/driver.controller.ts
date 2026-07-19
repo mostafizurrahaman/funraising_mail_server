@@ -1,20 +1,27 @@
 import httpStatus from "http-status";
-import { catchAsync, sendResponse } from "@/app/utils";
+import { catchAsync, getUserFromRequest, sendResponse } from "@/app/utils";
 import { DriverServices } from "./driver.services";
+import type { TMulterFile } from "@/app/types/multer.types";
 
-const create = catchAsync(async (req, res) => {
+const createDriver = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
    const payload = req.body;
+   const profileImage = req.file as TMulterFile;
 
-   await DriverServices.createIntoDB(payload);
+   const result = await DriverServices.createDriverIntoDB(
+      user,
+      payload,
+      profileImage,
+   );
 
    sendResponse(res, {
       success: true,
       statusCode: httpStatus.CREATED,
       message: "Driver created successfully!",
-      data: null,
+      data: result,
    });
 });
 
 export const DriverController = {
-   create,
+   createDriver,
 };
