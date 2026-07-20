@@ -1,4 +1,9 @@
-import { catchAsync, sendResponse, setCookie } from "@/app/utils";
+import {
+   catchAsync,
+   getUserFromRequest,
+   sendResponse,
+   setCookie,
+} from "@/app/utils";
 import httpStatus from "http-status";
 import { AuthServices } from "./auth.services";
 
@@ -81,11 +86,24 @@ const driverLogin = catchAsync(async (req, res) => {
    });
 });
 
-// ?? Sign up  otp verification
+// ?? Get my profile:
+const getMe = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+
+   const result = await AuthServices.getProfileFromDB(user);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Profile retrieved successfully!",
+      data: result,
+   });
+});
 
 export const AuthController = {
    signUp,
    organizationLogin,
    adminLogin,
    driverLogin,
+   getMe
 };

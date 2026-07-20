@@ -7,13 +7,15 @@ import { comparePassword, hashPassword } from "@/app/utils/password";
 import { configs } from "@/app/configs";
 import type { TMulterFile } from "@/app/types/multer.types";
 import uploadFileIntoCloudinary from "@/app/utils/upload-file-into-cloudinary";
-import mongoose from "mongoose";
+import mongoose, { Types, type PipelineStage } from "mongoose";
 import { Company } from "../Company/company.model";
 import { generateUniqueCompanyCode } from "../Company/company.utils";
 import { geoLocationType } from "../Company/company.constants";
 import { deleteFileByUrl } from "@/app/utils/delete-file-from-cloudinary";
 import type { IJwtUserPayload } from "@/app/types";
 import { createToken } from "@/app/utils";
+import type { IAuthDoc } from "./auth.interface";
+import { pipe, treeifyError } from "zod";
 
 // ? Organization Signup
 const signupIntoDB = async (
@@ -338,7 +340,7 @@ const adminLogin = async (payload: TLoginPayload) => {
    };
 };
 
-// ?? Admin login:
+// ?? Driver login:
 const driverLogin = async (payload: TLoginPayload) => {
    const { email, password } = payload;
 
@@ -417,9 +419,124 @@ const driverLogin = async (payload: TLoginPayload) => {
    };
 };
 
+// ?? Get profile From Db:
+const getProfileFromDB = async (user: IAuthDoc) => {
+   console.log(user);
+   const pipeline: PipelineStage[] = [
+      {
+         $match: {
+            _id: user?._id,
+         },
+      },
+      {
+         $project: {
+            passwordHash: 0,
+         },
+      },
+   ];
+
+   const lookupCollection =
+      user.role === AuthRole.COMPANY
+         ? "companies"
+         : user.role === AuthRole.DRIVER
+           ? "drivers"
+           : null;
+
+   if (lookupCollection) {
+      pipeline.push({
+         $lookup: {
+            from: lookupCollection,
+            localField: "_id",
+            foreignField: "user",
+            as: "profileDetails",
+         },
+      });
+
+      pipeline.push({
+         $unwind: {
+            path: "$profileDetails",
+            preserveNullAndEmptyArrays: true,
+         },
+      });
+   }
+   pipeline.push({
+      $unwind: {
+         path: "$profileDetails",
+         preserveNullAndEmptyArrays: true,
+      },
+   });
+
+   const projection: Record<string, unknown> = {
+      _id: 0,
+      userId: "$_id",
+      name: "$name",
+      email: "$email",
+      phone: "$phone",
+      profileImage: {
+         $ifNull: ["$profileImage", null],
+      },
+      role: "driver",
+      status: "active",
+      isVerified: true,
+      createdAt: "2026-07-19T18:42:08.788Z",
+      updatedAt: "2026-07-19T18:42:08.788Z",
+   };
+
+   if (user.role === AuthRole.DRIVER) {
+      projection["vehicleDetails"] = {
+         $ifNull: ["$profileDetails.vehicleDetails", null],
+      };
+
+      projection["driverCompanyId"] = {
+         $ifNull: ["$profileDetails.company", null],
+      };
+   }
+
+   if (user.role === AuthRole.COMPANY) {
+      projection["companyCode"] = {
+         $ifNull: ["$profileDetails.companyCode", null],
+      };
+
+      projection["companyName"] = {
+         $ifNull: ["$profileDetails.companyName", null],
+      };
+      projection["city"] = {
+         $ifNull: ["$profileDetails.city", null],
+      };
+      projection["address"] = {
+         $ifNull: ["$profileDetails.address", null],
+      };
+      projection["serviceArea"] = {
+         $ifNull: ["$profileDetails.serviceArea", null],
+      };
+      projection["radiusKm"] = {
+         $ifNull: ["$profileDetails.radiusKm", 0],
+      };
+      projection["fleetSize"] = {
+         $ifNull: ["$profileDetails.fleetSize", 0],
+      };
+      projection["note"] = {
+         $ifNull: ["$profileDetails.note", null],
+      };
+   }
+
+   pipeline.push({
+      $project: projection,
+   });
+
+   const profile = await Auth.aggregate(pipeline);
+
+   console.dir(pipeline, { depth: Infinity });
+   if (!profile?.[0]) {
+      throw new AppError(httpStatus.NOT_FOUND, "User profile not found!");
+   }
+   return profile?.[0];
+};
+
 export const AuthServices = {
    signupIntoDB,
    organizationLogin,
    adminLogin,
    driverLogin,
+   getProfileFromDB,
 };
