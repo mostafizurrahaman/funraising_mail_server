@@ -4,18 +4,17 @@ import {
    sortOrder,
 } from "@/app/constants";
 import {
+   enumString,
    optionalDate,
    optionalEnumString,
    optionalNumber,
    optionalString,
-   positiveNumber,
-   requiredDate,
    requiredEmail,
    requiredString,
 } from "@/app/utils";
 import z from "zod";
 import { driverSortableFields } from "./driver.constant";
-import { AuthStatusValues } from "../Auth/auth.constant";
+import { AuthStatus, AuthStatusValues } from "../Auth/auth.constant";
 
 const createSchema = z.object({
    body: z.object({
@@ -51,16 +50,41 @@ const setNewPassword = z.object({
    }),
 });
 
+const updateStatusSchema = z.object({
+   params: z.object({
+      driverId: requiredString("Driver ID"),
+   }),
+   body: z.object({
+      status: enumString(
+         [AuthStatus.ACTIVE, AuthStatus.BLOCKED, AuthStatus.REJECTED],
+         "status",
+      ),
+   }),
+});
+const driverDeleteByIDSchema = z.object({
+   params: z.object({
+      driverId: requiredString("Driver ID"),
+   }),
+});
+
 export const DriverValidationSchema = {
    createSchema,
    getAllDrivers,
    setNewPassword,
+   updateStatusSchema,
+   driverDeleteByIDSchema,
 };
 
 export type TCreateDriverPayload = z.infer<typeof createSchema.shape.body>;
 export type TGetAllDriverQuery = z.infer<typeof getAllDrivers.shape.query>;
 export type TSetNewPasswordPayloadType = z.infer<
    typeof setNewPassword.shape.body
+>;
+export type TUpdateStatusPayloadType = z.infer<
+   typeof updateStatusSchema.shape.body
+>;
+export type TDriverDeleteByIdType = z.infer<
+   typeof driverDeleteByIDSchema.shape.params
 >;
 
 // 3232323 (company password)

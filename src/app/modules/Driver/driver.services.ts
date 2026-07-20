@@ -5,6 +5,7 @@ import type {
    TSetNewPasswordPayloadType,
    TCreateDriverPayload,
    TGetAllDriverQuery,
+   TUpdateStatusPayloadType,
 } from "./driver.validation";
 import httpStatus from "http-status";
 import type { IAuth, IAuthDoc } from "../Auth/auth.interface";
@@ -406,8 +407,147 @@ const setNewPassword = async (
    return null;
 };
 
+const updateStatus = async (
+   user: IAuthDoc,
+   driverId: string,
+   payload: TUpdateStatusPayloadType,
+) => {
+   const { status } = payload;
+   // ?? Check is this driver exists?:
+   const driver = await Auth.findOne({
+      _id: driverId,
+      role: AuthRole.DRIVER,
+   }).select("+passwordHash");
+
+   if (!driver) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver not found!");
+   }
+
+   // ?? Find out driver profile details:
+   const profile = await Driver?.findOne({
+      user: driver?._id,
+   });
+
+   if (!profile) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "Driver profile details is not submitted yet.",
+      );
+   }
+
+   if (profile.company?.toString() !== user?._id?.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This driver is not belongs to your company",
+      );
+   }
+
+   if (driver.status === status) {
+      if (driver.status === status) {
+         throw new AppError(
+            httpStatus.BAD_REQUEST,
+            `Driver is already ${status}.`,
+         );
+      }
+   }
+
+   driver.status = status;
+
+   await driver.save();
+
+   return null;
+};
+
+const deleteDriverById = async (user: IAuthDoc, driverId: string) => {
+   // ?? Check is this driver exists?:
+   const driver = await Auth.findOne({
+      _id: driverId,
+      role: AuthRole.DRIVER,
+   });
+
+   if (!driver) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver not found!");
+   }
+
+   // ?? Find out driver profile details:
+   const profile = await Driver?.findOne({
+      user: driver?._id,
+   });
+
+   if (!profile) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "Driver profile details is not submitted yet.",
+      );
+   }
+
+   if (profile.company?.toString() !== user?._id?.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This driver is not belongs to your company",
+      );
+   }
+
+   /*
+      Few validation we have to later: 
+   */
+
+   const session = await mongoose.startSession();
+
+   try {
+      session.startTransaction();
+      const deletedDriver = await Auth.findOneAndDelete(
+         {
+            _id: driverId,
+         },
+         {
+            new: true,
+            session,
+         },
+      );
+
+      if (!deletedDriver) {
+         throw new AppError(httpStatus.BAD_REQUEST, "Failed to delete driver.");
+      }
+
+      const deletedProfile = await Driver.deleteOne(
+         {
+            user: deletedDriver?._id,
+         },
+         {
+            session,
+         },
+      );
+
+      if (!deletedProfile) {
+         throw new AppError(
+            httpStatus.BAD_REQUEST,
+            "Failed to delete driver profile details.",
+         );
+      }
+
+      await session.commitTransaction();
+
+      if (driver.profileImage) {
+         await deleteFileByUrl(driver.profileImage);
+      }
+
+      return null;
+   } catch (error: any) {
+      await session.abortTransaction();
+      throw new AppError(
+         httpStatus.INTERNAL_SERVER_ERROR,
+         error.message || "Something went wrong!",
+      );
+   } finally {
+      await session.endSession();
+   }
+};
+
 export const DriverServices = {
    createDriverIntoDB,
    getAllDrivers,
    setNewPassword,
+   updateStatus,
+   deleteDriverById,
 };

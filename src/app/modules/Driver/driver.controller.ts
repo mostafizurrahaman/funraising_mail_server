@@ -53,8 +53,38 @@ const setNewPassword = catchAsync(async (req, res) => {
    });
 });
 
+const updateStatus = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+   const driverId = req.params.driverId as string;
+
+   const result = await DriverServices.updateStatus(user, driverId, req.body);
+
+   sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Driver status updated successfully.",
+      data: result,
+   });
+});
+
+const deleteDriverById = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+   const driverId = req.params.driverId as string;
+
+   const result = await DriverServices.deleteDriverById(user, driverId);
+
+   sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Driver is deleted successfully.",
+      data: result,
+   });
+});
+
 export const DriverController = {
    createDriver,
    getAllDrivers,
    setNewPassword,
+   updateStatus,
+   deleteDriverById,
 };

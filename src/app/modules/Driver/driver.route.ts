@@ -34,4 +34,18 @@ router.post(
    DriverController.setNewPassword,
 );
 
+router.patch(
+   "/status/:driverId",
+   auth(AuthRole.COMPANY),
+   validateRequest(DriverValidationSchema.updateStatusSchema),
+   DriverController.updateStatus,
+);
+
+router.delete(
+   "/:driverId",
+   auth(AuthRole.COMPANY),
+   validateRequest(DriverValidationSchema.driverDeleteByIDSchema),
+   DriverController.deleteDriverById,
+);
+
 export const DriverRoutes = router;

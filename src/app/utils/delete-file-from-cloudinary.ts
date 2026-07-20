@@ -14,5 +14,7 @@ export const deleteFileByUrl = async (url: string) => {
       ?.replace(/^v\d+\//, "")
       .replace(/\.[^/.]+$/, "") as string;
 
-   return cloudinary.uploader.destroy(publicId);
+   return cloudinary.uploader.destroy(publicId, {
+      invalidate: true,
+   });
 };
