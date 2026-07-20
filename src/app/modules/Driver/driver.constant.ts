@@ -1,6 +1,17 @@
-export const DriverRole = {} as const;
+export const driverSortableFields = [
+   "name",
+   "email",
+   "phone",
+   "createdAt",
+   "updatedAt",
+];
 
-export const DriverStatus = {} as const;
-
-export const DriverRoleValues = Object.values(DriverRole);
-export const DriverStatusValues = Object.values(DriverStatus);
+export const driverSearchAbleFields = [
+   "name",
+   "email",
+   "phone",
+   "companyName",
+   "companyCode",
+   "createdAt",
+   "updatedAt",
+];

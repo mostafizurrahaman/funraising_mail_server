@@ -17,6 +17,7 @@
       "@types/express": "^5.0.6",
       "@types/jsonwebtoken": "^9.0.10",
       "@types/multer": "^2.2.0",
+      "@types/nodemailer": "^8.0.1",
       "@types/streamifier": "^0.1.2"
    },
    "peerDependencies": {
@@ -33,6 +34,7 @@
       "jsonwebtoken": "^9.0.3",
       "mongoose": "^9.7.4",
       "multer": "^2.2.0",
+      "nodemailer": "^9.0.3",
       "streamifier": "^0.1.1",
       "tsx": "^4.23.1",
       "validation-latitude-longitude": "^1.1.3",

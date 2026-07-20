@@ -20,4 +20,18 @@ router.post(
    DriverController.createDriver,
 );
 
+router.get(
+   "/all",
+   auth(AuthRole.COMPANY),
+   validateRequest(DriverValidationSchema.getAllDrivers),
+   DriverController.getAllDrivers,
+);
+
+router.post(
+   "/set-password/:driverId",
+   auth(AuthRole.COMPANY),
+   validateRequest(DriverValidationSchema.setNewPassword),
+   DriverController.setNewPassword,
+);
+
 export const DriverRoutes = router;

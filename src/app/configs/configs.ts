@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import path from "path";
 import z from "zod";
 
-import { requiredString } from "../utils";
+import { requiredNumber, requiredString } from "../utils";
 import { GERMANY_PHONE_NUMBER_REGEX } from "../constants";
 
 //zod Validation for Configs
@@ -58,6 +58,12 @@ const envValidationSchema = z.object({
          error: "Phone number is invalid!",
       }),
    superAdminPassword: requiredString("Password"),
+
+   // Node mailer :
+   nodemailerEmail: requiredString("Nodemailer email"),
+   nodemailerPassword: requiredString("Nodemailer password"),
+   nodemailerHost: requiredString("Nodemailer host"),
+   nodemailerPort: requiredNumber("Nodemailer port"),
 });
 
 type TConfigType = z.infer<typeof envValidationSchema>;
@@ -88,6 +94,12 @@ const envs: TConfigType = {
    superAdminEmail: process.env.SUPER_ADMIN_EMAIL!,
    superAdminPhone: process.env.SUPER_ADMIN_PHONE!,
    superAdminPassword: process.env.SUPER_ADMIN_PASSWORD!,
+
+   // NODE MAILER :
+   nodemailerEmail: process.env.NODEMAILER_EMAIL!,
+   nodemailerPassword: process.env.NODEMAILER_PASSWORD!,
+   nodemailerHost: process.env.NODEMAILER_HOST!,
+   nodemailerPort: Number(process.env.NODEMAILER_PORT),
 };
 
 const validateEnv = () => {

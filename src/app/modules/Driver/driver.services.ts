@@ -1,17 +1,27 @@
 import { AppError } from "@/app/errors";
 import { AuthRole, AuthStatus } from "../Auth/auth.constant";
 import { Auth } from "../Auth/auth.model";
-import type { TCreateDriverPayload } from "./driver.validation";
+import type {
+   TSetNewPasswordPayloadType,
+   TCreateDriverPayload,
+   TGetAllDriverQuery,
+} from "./driver.validation";
 import httpStatus from "http-status";
-import type { IAuthDoc } from "../Auth/auth.interface";
+import type { IAuth, IAuthDoc } from "../Auth/auth.interface";
 import type { TMulterFile } from "@/app/types/multer.types";
 import uploadFileIntoCloudinary from "@/app/utils/upload-file-into-cloudinary";
-import mongoose from "mongoose";
+import mongoose, { Types, type PipelineStage } from "mongoose";
 import { hashPassword } from "@/app/utils/password";
 import { configs } from "@/app/configs";
 import { Driver } from "./driver.model";
 import { deleteFileByUrl } from "@/app/utils/delete-file-from-cloudinary";
+import { driverSearchAbleFields } from "./driver.constant";
+import {
+   driverPasswordChangedTemplate,
+   sendEmail,
+} from "@/app/utils/send-email";
 
+// ** Create Driver **
 const createDriverIntoDB = async (
    auth: IAuthDoc,
    payload: TCreateDriverPayload,
@@ -157,6 +167,247 @@ const createDriverIntoDB = async (
    }
 };
 
+// ** Get all drivers of your company **
+const getAllDrivers = async (user: IAuthDoc, query: TGetAllDriverQuery) => {
+   // ? destructure query :
+   const {
+      page: currentPage,
+      limit: currentLimit,
+      fromDate,
+      toDate,
+      status,
+      searchTerm,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+   } = query;
+
+   const page = Number(currentPage) || 1;
+   const limit = Number(currentLimit) || 10;
+   const skip = (page - 1) * limit;
+
+   //  Only filter out the drivers :
+   const pipeline: PipelineStage[] = [
+      {
+         $match: {
+            role: AuthRole.DRIVER,
+         },
+      },
+   ];
+
+   // Status filter:
+   if (status) {
+      pipeline.push({
+         $match: {
+            status,
+         },
+      });
+   }
+
+   // Date filter:
+   if (fromDate || toDate) {
+      const dateFilter: Record<string, Date> = {};
+
+      if (fromDate) {
+         dateFilter.$gte = new Date(fromDate);
+      }
+      if (toDate) {
+         dateFilter.$lte = new Date(toDate);
+      }
+
+      pipeline.push({
+         $match: {
+            createdAt: dateFilter,
+         },
+      });
+   }
+
+   // ? Now lookup the driver information of this driver:
+   pipeline.push({
+      $lookup: {
+         from: "drivers",
+         localField: "_id",
+         foreignField: "user",
+         as: "profileDetails",
+         pipeline: [
+            {
+               $lookup: {
+                  from: "companies",
+                  localField: "company",
+                  foreignField: "user",
+                  as: "companyDetails",
+               },
+            },
+            {
+               $unwind: {
+                  path: "$companyDetails",
+                  preserveNullAndEmptyArrays: true,
+               },
+            },
+         ],
+      },
+   });
+
+   pipeline.push({
+      $unwind: {
+         path: "$profileDetails",
+         preserveNullAndEmptyArrays: true,
+      },
+   });
+
+   // ? Do the final projection:
+   pipeline.push({
+      $project: {
+         driverProfileId: "$profileDetails._id",
+         name: "$name",
+         companyId: "$profileDetails.company",
+         companyName: "$profileDetails.companyDetails.companyName",
+         companyCode: "$profileDetails.companyDetails.companyCode",
+
+         vehicleDetails: "$profileDetails.vehicleDetails",
+
+         email: "$email",
+         phone: { $ifNull: ["$phone", null] },
+         profileImage: { $ifNull: ["$profileImage", null] },
+         isVerified: "$isVerified",
+         status: "$status",
+         role: "$role",
+         createdAt: "$createdAt",
+         updatedAt: "$updatedAt",
+      },
+   });
+
+   // ? Do the search filters here:
+
+   if (searchTerm) {
+      pipeline.push({
+         $match: {
+            $or: driverSearchAbleFields.map((field) => ({
+               [field]: {
+                  $regex: searchTerm,
+                  $options: "i",
+               },
+            })),
+         },
+      });
+   }
+
+   if (sortBy || sortOrder) {
+      pipeline.push({
+         $sort: {
+            [sortBy]: sortOrder === "asc" ? 1 : -1,
+         },
+      });
+   }
+
+   // ? Do facet for pagination
+   pipeline.push({
+      $facet: {
+         data: [
+            {
+               $skip: skip,
+            },
+            {
+               $limit: limit,
+            },
+         ],
+         meta: [
+            {
+               $count: "total",
+            },
+         ],
+      },
+   });
+
+   const result = await Auth.aggregate(pipeline);
+
+   const data = result?.[0].data;
+   const total = result?.[0]?.meta?.[0]?.total || 0;
+   const totalPages = Math.ceil(total / limit);
+
+   return {
+      data,
+      meta: {
+         page,
+         limit,
+         total,
+         totalPages,
+      },
+   };
+};
+
+const setNewPassword = async (
+   user: IAuthDoc,
+   driverId: string,
+   payload: TSetNewPasswordPayloadType,
+) => {
+   const { newPassword } = payload;
+   // ?? Check is this driver exists?:
+   const driver = await Auth.findOne({
+      _id: driverId,
+      role: AuthRole.DRIVER,
+   }).select("+passwordHash");
+
+   if (!driver) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver not found!");
+   }
+
+   if (driver?.status !== AuthStatus.ACTIVE) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "Driver profile is not active yet.",
+      );
+   }
+
+   // ?? Find out driver profile details:
+   const profile = await Driver?.findOne({
+      user: driver?._id,
+   });
+
+   if (!profile) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "Driver profile details is not submitted yet.",
+      );
+   }
+
+   if (profile.company?.toString() !== user?._id?.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This driver is not belongs to your company",
+      );
+   }
+
+   // ? Compare old password:
+   const hashedPassword = await hashPassword(
+      newPassword,
+      configs.passwordSaltRound,
+   );
+
+   driver.passwordHash = hashedPassword;
+   driver.passwordChangedAt = new Date();
+
+   await driver.save({
+      validateBeforeSave: true,
+   });
+
+   const html = driverPasswordChangedTemplate({
+      driverName: driver.name,
+      email: driver.email,
+      password: newPassword,
+      companyName: user?.name,
+   });
+
+   await sendEmail({
+      to: driver.email,
+      subject: "Ihr Passwort wurde geändert",
+      html,
+   });
+
+   return null;
+};
+
 export const DriverServices = {
    createDriverIntoDB,
+   getAllDrivers,
+   setNewPassword,
 };
