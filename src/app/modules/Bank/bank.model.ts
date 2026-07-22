@@ -1,5 +1,11 @@
 import { model, Schema, Types } from "mongoose";
 import type { IBankDoc } from "./bank.interface";
+import {
+   Country,
+   CountryValues,
+   Currency,
+   CurrencyValues,
+} from "./bank.constant";
 
 const bankSchema = new Schema<IBankDoc>(
    {
@@ -24,6 +30,16 @@ const bankSchema = new Schema<IBankDoc>(
       bic: {
          type: String,
          required: true,
+      },
+      country: {
+         type: String,
+         enum: CountryValues,
+         default: Country.GERMANY,
+      },
+      currency: {
+         type: String,
+         enum: CurrencyValues,
+         default: Currency.EUR,
       },
    },
    {

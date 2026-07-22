@@ -1,4 +1,6 @@
 import {
+   optionalNumber,
+   optionalString,
    positiveNumber,
    requiredMongooseId,
    requiredString,
@@ -22,9 +24,16 @@ const updateSurchargeSchema = z.object({
    }),
 });
 
+const getAllSurchargeByCompanyId = z.object({
+   params: z.object({
+      companyId: requiredMongooseId("Company ID"),
+   }),
+});
+
 export const SurchargeValidationSchema = {
    createSurchargeSchema,
    updateSurchargeSchema,
+   getAllSurchargeByCompanyId,
 };
 
 export type TCreateSurchargePayload = z.infer<
@@ -32,4 +41,8 @@ export type TCreateSurchargePayload = z.infer<
 >;
 export type TUpdateSurchargePayload = z.infer<
    typeof updateSurchargeSchema.shape.body
+>;
+
+export type TGetAllCompanySurchargesByCompanyId = z.infer<
+   typeof getAllSurchargeByCompanyId.shape.params
 >;

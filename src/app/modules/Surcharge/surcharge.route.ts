@@ -21,4 +21,10 @@ router.patch(
    SurchargeController.updateSurchargeByID,
 );
 
+router.get(
+   "/all/:companyId",
+   validateRequest(SurchargeValidationSchema.getAllSurchargeByCompanyId),
+   SurchargeController.getAllSurchargeByCompanyId,
+);
+
 export const SurchargeRoutes = router;

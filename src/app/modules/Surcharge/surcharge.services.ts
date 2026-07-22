@@ -7,6 +7,9 @@ import type {
 import { Surcharge } from "./surcharge.model";
 import { AppError } from "@/app/errors";
 import httpStatus from "http-status";
+import type { PipelineStage } from "mongoose";
+import { getUserFromRequest } from "@/app/utils";
+import { Auth } from "../Auth/auth.model";
 
 const createSurchargeIntoDB = async (
    user: IAuthDoc,
@@ -73,7 +76,7 @@ const updateSurchargeIntoDBById = async (
          labelSlug,
       });
 
-      if (!duplicateSurcharge) {
+      if (duplicateSurcharge) {
          throw new AppError(
             httpStatus.NOT_FOUND,
             "A surcharge with this label already exists.",
@@ -89,6 +92,8 @@ const updateSurchargeIntoDBById = async (
    existingSurcharge.save({
       validateBeforeSave: true,
    });
+
+   return existingSurcharge;
 };
 
 const deleteSurchargeByIDFromDB = async (user: IAuthDoc, id: string) => {
@@ -114,8 +119,32 @@ const deleteSurchargeByIDFromDB = async (user: IAuthDoc, id: string) => {
    return deletedSurcharge;
 };
 
+const getAllSurchargeFromDB = async (companyId: string) => {
+   // ?? Check is there any  company exists with this ID:
+   const user = await Auth.findOne({
+      _id: companyId,
+   });
+
+   if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "Company not found!");
+   }
+
+   const pipeline: PipelineStage[] = [
+      {
+         $match: {
+            user: user?._id,
+         },
+      },
+   ];
+
+   const allSurcharges = await Surcharge.aggregate(pipeline);
+
+   return allSurcharges;
+};
+
 export const SurchargeServices = {
    createSurchargeIntoDB,
    updateSurchargeIntoDBById,
    deleteSurchargeByIDFromDB,
+   getAllSurchargeFromDB,
 };
