@@ -1,13 +1,17 @@
+import { positiveNumber } from "@/app/utils";
 import z from "zod";
 
-const createSchema = z.object({
-   body: z.object({}),
+const updateOrCreateSchema = z.object({
+   body: z.object({
+      baseFare: positiveNumber("Base fare must be a number."),
+      perKm: positiveNumber("Per kilometer fare is required."),
+   }),
 });
 
 export const PricingValidationSchema = {
-   createSchema,
+   updateOrCreateSchema,
 };
 
-export type TCreatePricingPayload = z.infer<
-   typeof createSchema.shape.body
+export type TUpdateOrCreatePayload = z.infer<
+   typeof updateOrCreateSchema.shape.body
 >;

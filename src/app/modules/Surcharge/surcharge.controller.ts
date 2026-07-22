@@ -1,11 +1,11 @@
 import httpStatus from "http-status";
-import { catchAsync, sendResponse } from "@/app/utils";
+import { catchAsync, getUserFromRequest, sendResponse } from "@/app/utils";
 import { SurchargeServices } from "./surcharge.services";
 
-const create = catchAsync(async (req, res) => {
+const createSurcharge = catchAsync(async (req, res) => {
    const payload = req.body;
-
-   await SurchargeServices.createIntoDB(payload);
+   const user = await getUserFromRequest(req);
+   await SurchargeServices.createSurchargeIntoDB(user, payload);
 
    sendResponse(res, {
       success: true,
@@ -15,6 +15,21 @@ const create = catchAsync(async (req, res) => {
    });
 });
 
+const updateSurchargeByID = catchAsync(async (req, res) => {
+   const payload = req.body;
+   const surchargeId = req.params.id as string;
+   const user = await getUserFromRequest(req);
+   await SurchargeServices.updateSurchargeIntoDBById(user, surchargeId, payload);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.CREATED,
+      message: "Surcharge updated successfully!",
+      data: null,
+   });
+});
+
 export const SurchargeController = {
-   create,
+   createSurcharge,
+   updateSurchargeByID,
 };

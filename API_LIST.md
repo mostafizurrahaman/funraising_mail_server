@@ -129,7 +129,7 @@
 
 ---
 
-### Module 8: Live Geolocation Tracking (`/api/v1/tracking-state`)
+### Module 8: Live Geo location Tracking (`/api/v1/tracking-state`)
 
 - **`GET /tracking-state/:bookingId`**
    - **Type**: Directory Query
@@ -162,6 +162,6 @@
    - **Reason**: Allows a driver to return an assigned trip back to the public
      pool.
 - **`GET /driver-portal/my-rides`**
-   - **Type**: Directory Query
+   - **Type**: Directory Query   
    - **Reason**: Loads current and historically completed jobs assigned to the
      logged-in driver.

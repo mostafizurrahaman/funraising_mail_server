@@ -15,7 +15,7 @@ export const handleDuplicateError = (err: any): ISendErrorResponse => {
 
    return {
       statusCode,
-      message: `Path "${key}" is already Exists`,
+      message: errorSources?.[0]?.message as string,
       errorSources,
    };
 };

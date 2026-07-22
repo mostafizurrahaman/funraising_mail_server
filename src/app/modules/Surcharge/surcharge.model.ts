@@ -4,13 +4,8 @@ import type { ISurchargeDoc } from "./surcharge.interface";
 const surchargeSchema = new Schema<ISurchargeDoc>(
    {
       user: {
-         type: Types.ObjectId,
+         type: Schema.Types.ObjectId,
          ref: "Auth",
-         required: true,
-      },
-      pricing: {
-         type: Types.ObjectId,
-         ref: "Pricing",
          required: true,
       },
       label: {
@@ -22,7 +17,7 @@ const surchargeSchema = new Schema<ISurchargeDoc>(
          required: true,
       },
       amount: {
-         type: String,
+         type: Number,
          required: true,
          min: 0,
       },
@@ -36,12 +31,11 @@ const surchargeSchema = new Schema<ISurchargeDoc>(
 surchargeSchema.index(
    {
       user: 1,
-      pricing: 1,
       labelSlug: 1,
    },
    {
       unique: true,
-      name: "uniq_comp_price_lbl",
+      name: "uniq_comp_lbl",
    },
 );
 

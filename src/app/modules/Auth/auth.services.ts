@@ -15,7 +15,6 @@ import { deleteFileByUrl } from "@/app/utils/delete-file-from-cloudinary";
 import type { IJwtUserPayload } from "@/app/types";
 import { createToken } from "@/app/utils";
 import type { IAuthDoc } from "./auth.interface";
-import { pipe, treeifyError } from "zod";
 
 // ? Organization Signup
 const signupIntoDB = async (
