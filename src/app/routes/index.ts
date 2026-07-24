@@ -6,6 +6,7 @@ import { PricingRoutes } from "../modules/Pricing";
 import { SurchargeRoutes } from "../modules/Surcharge";
 import { BankRoutes } from "../modules/Bank";
 import { userRoutes } from "../modules/User/user.routes";
+import { BookingRoutes } from "../modules/Booking";
 const router = express.Router();
 
 const routes = [
@@ -32,6 +33,10 @@ const routes = [
    {
       path: "/user",
       route: userRoutes,
+   },
+   {
+      path: "/booking",
+      route: BookingRoutes,
    },
 ];
 

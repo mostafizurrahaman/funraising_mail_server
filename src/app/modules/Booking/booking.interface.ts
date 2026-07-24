@@ -26,7 +26,8 @@ export interface IBooking {
 
    // Ride Date:
    rideDate: Date;
-   rideTime: Date;
+   rideTime: string;
+   rideAt: Date;
 
    // Estimated Distance:
    estimatedDistance: number; // in km

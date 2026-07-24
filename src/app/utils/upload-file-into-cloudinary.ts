@@ -1,4 +1,8 @@
-import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
+import {
+   v2 as cloudinary,
+   type UploadApiOptions,
+   type UploadApiResponse,
+} from "cloudinary";
 import streamifier from "streamifier";
 import { AppError } from "../errors";
 import httpStatus from "http-status";
@@ -15,27 +19,45 @@ const uploadFileIntoCloudinary = (
    folder: string,
 ): Promise<UploadApiResponse | undefined> => {
    return new Promise((resolve, reject) => {
-      const mimeType = file.mimetype.startsWith("video/") ? "video" : "image";
+      const resourceType = file.mimetype?.startsWith("image/")
+         ? "image"
+         : file.mimetype?.startsWith("video/")
+           ? "video"
+           : "auto";
+
       const steam = cloudinary.uploader.upload_stream(
          {
             folder,
-            resource_type: mimeType,
+            resource_type: resourceType,
          },
          (err, result) => {
-            if (err)
+            if (err) {
                return reject(
                   new AppError(
                      httpStatus.BAD_REQUEST,
-                     `Failed to upload ${mimeType}`,
+                     `Failed to upload ${file.mimetype}`,
                   ),
                );
-
+            }
             resolve(result);
          },
       );
 
       streamifier.createReadStream(file.buffer).pipe(steam);
    });
+};
+
+export const uploadMultipleFilesIntoCloudinary = async (
+   files: Express.Multer.File[],
+   folder: string,
+): Promise<string[]> => {
+   if (!files?.length) return [];
+
+   const results = await Promise.all(
+      files.map((file) => uploadFileIntoCloudinary(file, folder)),
+   );
+
+   return results.map((result) => result!.secure_url);
 };
 
 export default uploadFileIntoCloudinary;

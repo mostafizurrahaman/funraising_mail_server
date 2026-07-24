@@ -1,4 +1,5 @@
 import type {
+   FileCategory,
    FileExtension,
    FileValidationConfig,
 } from "@/app/types/multer.types";
@@ -14,9 +15,27 @@ export const isFileExtensionAllowed = (
 
    if (!extension) return false;
 
+   const categoryExtensions: FileExtension[] = [];
+
+   if (
+      config?.category &&
+      Array.isArray(config?.category) &&
+      config?.category?.length > 0
+   ) {
+      config?.category?.map((category) => {
+         const extensions = FILE_CATEGORY_MAP?.[category!];
+
+         categoryExtensions.push(...extensions);
+      });
+   }
+
+   if (config?.category && !Array.isArray(config?.category)) {
+      const extensions = FILE_CATEGORY_MAP?.[config.category!];
+      categoryExtensions.push(...extensions);
+   }
+
    const allowedExtensions: readonly FileExtension[] =
-      config.allowedExtensions ??
-      (config?.category ? FILE_CATEGORY_MAP?.[config.category!] : []);
+      config.allowedExtensions ?? (config?.category ? categoryExtensions : []);
 
    if (!allowedExtensions.length) {
       throw new AppError(

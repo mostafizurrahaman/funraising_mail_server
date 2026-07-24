@@ -61,7 +61,7 @@ const bookingSchema = new Schema<IBookingDoc>(
             required: true,
          },
          coordinates: {
-            type: [String],
+            type: [Number],
          },
       },
 
@@ -77,7 +77,7 @@ const bookingSchema = new Schema<IBookingDoc>(
             required: true,
          },
          coordinates: {
-            type: [String],
+            type: [Number],
          },
       },
 
@@ -86,6 +86,10 @@ const bookingSchema = new Schema<IBookingDoc>(
          required: true,
       },
       rideTime: {
+         type: String,
+         required: true,
+      },
+      rideAt: {
          type: Date,
          required: true,
       },
@@ -111,7 +115,7 @@ const bookingSchema = new Schema<IBookingDoc>(
       assignedDriver: {
          type: Types.ObjectId,
          ref: "Driver",
-         required: true,
+         default: null,
       },
       notes: {
          type: String,
