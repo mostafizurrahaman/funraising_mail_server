@@ -474,11 +474,11 @@ const getProfileFromDB = async (user: IAuthDoc) => {
       profileImage: {
          $ifNull: ["$profileImage", null],
       },
-      role: "driver",
-      status: "active",
-      isVerified: true,
-      createdAt: "2026-07-19T18:42:08.788Z",
-      updatedAt: "2026-07-19T18:42:08.788Z",
+      role: "$role",
+      status: "$status",
+      isVerified: "$isVerified",
+      createdAt: "$createdAt",
+      updatedAt: "$updatedAt",
    };
 
    if (user.role === AuthRole.DRIVER) {

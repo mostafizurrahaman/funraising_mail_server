@@ -21,3 +21,25 @@ export const AuthStatus = {
 
 export const AuthRoleValues = Object.values(AuthRole);
 export const AuthStatusValues = Object.values(AuthStatus);
+
+export const sortableFields = [
+   "name",
+   "email",
+   "companyName",
+   "status",
+   "phone",
+   "companyCode",
+   "city",
+   "address",
+];
+
+export const searchableFields = [
+   "name",
+   "email",
+   "companyName",
+   "phone",
+   "companyCode",
+   "city",
+   "status",
+   "address",
+];
