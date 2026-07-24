@@ -40,7 +40,7 @@ export interface IBooking {
    invoiceUrl?: string;
 
    // assign driver ;
-   assignedDriver: Types.ObjectId;
+   assignedDriver?: Types.ObjectId;
 
    notes: string;
 
@@ -59,14 +59,15 @@ export interface IGkvBooking {
 
 export interface IPrivateBooking {
    estimatedFixedPrice: number;
-   bookingCharges: Types.ObjectId[]; // snapshot
+   bookingCharges: Types.ObjectId[];
+   bookingChargeSnapshot: unknown; // snapshot
    basePrice: number; // to keep snapshot of the price
    pricePerKm: number; //  snapshot of the pricePerKm :
 
    // Payment related fields:
    paymentStatus: TBookingPaymentStatusType;
-   paymentMethod: TPaymentMethodType;
-   paymentReference: string;
+   paymentMethod?: TPaymentMethodType;
+   paymentReference?: string;
 }
 
 export interface IBookingDoc extends IBooking, Document {}

@@ -81,10 +81,40 @@ const gkvBookingCreateSchema = z.object({
       }),
 });
 
+export const privateBookingCreateSchema = z.object({
+   body: z
+      .object({
+         ...baseBookingValidation,
+         bookingCharges: z
+            .array(requiredMongooseId("Booking Surcharges ID"), {
+               error: "Booking surcharges is required",
+            })
+            .optional(),
+      })
+      .superRefine((data, ctx) => {
+         // If the coordinates are identical, it is an invalid route
+         if (
+            data.pickupLongitude === data.destinationLongitude &&
+            data.pickupLatitude === data.destinationLatitude
+         ) {
+            ctx.addIssue({
+               code: z.ZodIssueCode.custom,
+               message:
+                  "Pickup address and destination address cannot be the exact same location",
+               path: ["destinationAddress"],
+            });
+         }
+      }),
+});
+
 export const BookingValidationSchema = {
    gkvBookingCreateSchema,
+   privateBookingCreateSchema,
 };
 
 export type TGkvBookingPayloadType = z.infer<
    typeof gkvBookingCreateSchema.shape.body
+>;
+export type TPrivateBookingPayloadType = z.infer<
+   typeof privateBookingCreateSchema.shape.body
 >;

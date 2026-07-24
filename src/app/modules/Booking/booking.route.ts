@@ -16,4 +16,10 @@ router.post(
    BookingController.createGkbBooking,
 );
 
+router.post(
+   "/private",
+   validateRequest(BookingValidationSchema.privateBookingCreateSchema),
+   BookingController.createPrivateBooking,
+);
+
 export const BookingRoutes = router;

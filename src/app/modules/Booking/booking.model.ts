@@ -180,8 +180,12 @@ const privateBookingSchema = new Schema<IPrivateBookingDoc>({
    },
    bookingCharges: {
       type: [Types.ObjectId],
-      ref: "BookingCharge",
+      ref: "Surcharge",
       required: true,
+   },
+   bookingChargeSnapshot: {
+      type: Schema.Types.Mixed,
+      default: null,
    },
    paymentStatus: {
       type: String,
@@ -192,24 +196,22 @@ const privateBookingSchema = new Schema<IPrivateBookingDoc>({
    paymentMethod: {
       type: String,
       enum: PaymentMethodValues,
-      required: true,
    },
    paymentReference: {
       type: String,
-      required: true,
    },
 });
 
 export const Booking = model<IBookingDoc>("Booking", bookingSchema);
 
 // ? Create the model for the GKV Booking:
-export const GkvBooking = Booking.discriminator(
+export const GkvBooking = Booking.discriminator<IGkvBookingDoc>(
    BookingType.GKV,
    gkvBookingSchema,
 );
 
 // ? Create the model for the GKV Booking:
-export const PrivateBooking = bookingSchema.discriminator(
+export const PrivateBooking = Booking.discriminator<IPrivateBookingDoc>(
    BookingType.PRIVATE,
    privateBookingSchema,
 );
