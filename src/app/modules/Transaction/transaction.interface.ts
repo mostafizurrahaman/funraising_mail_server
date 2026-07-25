@@ -7,6 +7,7 @@ import type {
 
 export interface ITransaction {
    booking: Types.ObjectId;
+   verifiedBy: Types.ObjectId;
    amount: number;
    currency: TCurrency;
    gateway: TPaymentGateway;

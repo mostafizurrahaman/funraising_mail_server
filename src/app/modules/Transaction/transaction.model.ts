@@ -15,6 +15,10 @@ const transactionSchema = new Schema<ITransactionDoc>(
          ref: "Booking",
          required: true,
       },
+      verifiedBy: {
+         type: Schema.Types.ObjectId,
+         ref: "Auth",
+      },
       amount: {
          type: Number,
          min: 0,

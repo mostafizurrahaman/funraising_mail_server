@@ -25,7 +25,7 @@ export type TPrescriptionReasonType =
 // ? 3. Booking Payment Status:
 export const BookingPaymentStatus = {
    PENDING: "PENDING",
-   REFERENCE_SUBMITTED: "REFERENCE_SUBMITTED",
+   PAYMENT_SUBMITTED: "PAYMENT_SUBMITTED",
    PAID: "PAID",
    FAILED: "FAILED",
    REFUNDED: "REFUNDED",
@@ -65,6 +65,7 @@ export type TPaymentMethodType =
 export const BookingStatus = {
    NEW: "NEW",
    ASSIGNED: "ASSIGNED",
+   STARTED: "STARTED",
    COMPLETED: "COMPLETED",
    CANCELLED: "CANCELLED",
 } as const;

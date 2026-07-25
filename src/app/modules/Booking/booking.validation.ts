@@ -1,7 +1,24 @@
-import { GERMANY_PHONE_NUMBER_REGEX } from "@/app/constants";
-import { enumString, requiredMongooseId, requiredString } from "@/app/utils";
+import {
+   GERMANY_PHONE_NUMBER_REGEX,
+   sortingOrderValues,
+} from "@/app/constants";
+import {
+   enumString,
+   optionalDate,
+   optionalEnumString,
+   optionalNumber,
+   optionalString,
+   requiredMongooseId,
+   requiredString,
+} from "@/app/utils";
 import z from "zod";
 import {
+   BookingPaymentStatusValues,
+   BookingStatus,
+   BookingStatusValues,
+   BookingType,
+   BookingTypeValues,
+   PaymentMethod,
    PrescriptionReasonValues,
    VehicleTypeValues,
 } from "./booking.constant";
@@ -81,7 +98,7 @@ const gkvBookingCreateSchema = z.object({
       }),
 });
 
-export const privateBookingCreateSchema = z.object({
+const privateBookingCreateSchema = z.object({
    body: z
       .object({
          ...baseBookingValidation,
@@ -107,9 +124,78 @@ export const privateBookingCreateSchema = z.object({
       }),
 });
 
+const getAllBookingFromDB = z.object({
+   query: z.object({
+      page: optionalNumber("Page"),
+      limit: optionalNumber("Limit"),
+      searchTerm: optionalString("search term"),
+      bookingStatus: optionalEnumString(BookingStatusValues, "Booking Status"),
+      bookingNumber: optionalString("Booking number"),
+      paymentStatus: optionalEnumString(
+         BookingPaymentStatusValues,
+         "Payment Status",
+      ),
+      bookingType: optionalEnumString(BookingTypeValues, "Booking Type"),
+      sortBy: optionalEnumString(
+         [
+            "createdAt",
+            "updatedAt",
+            "bookingNumber",
+            "estimatedDistance",
+            "estimatedFixedPrice",
+            "estimatedRidingTime",
+         ],
+         "Sort by",
+      ),
+      companyId: requiredMongooseId("Company ID").optional(),
+      assignedDriverId: requiredMongooseId("Assigned Driver ID").optional(),
+      sortOrder: optionalEnumString(sortingOrderValues, "Sort order"),
+      fromDate: optionalDate("From date"),
+      toDate: optionalDate("To date"),
+   }),
+});
+
+const verifyPayment = z.object({
+   params: z.object({
+      id: requiredMongooseId("Booking ID"),
+   }),
+   body: z.object({
+      referenceNumber: requiredString("Reference Number").trim(),
+   }),
+});
+const payForPrivateBooking = z.object({
+   params: z.object({
+      id: requiredMongooseId("Booking ID"),
+   }),
+   body: z
+      .object({
+         paymentMethod: enumString(
+            [PaymentMethod.BANK_TRANSFER, PaymentMethod.CASH],
+            "Payment Method",
+         ),
+         referenceNumber: optionalString("Reference Number"),
+      })
+      .superRefine((data, ctx) => {
+         if (
+            data.paymentMethod === "BANK_TRANSFER" &&
+            (!data.referenceNumber || data.referenceNumber?.trim() === "")
+         ) {
+            ctx.addIssue({
+               code: "custom",
+               path: ["referenceNumber"],
+               message:
+                  "Reference number is required while payment method is BANK_TRANSFER",
+            });
+         }
+      }),
+});
+
 export const BookingValidationSchema = {
    gkvBookingCreateSchema,
    privateBookingCreateSchema,
+   getAllBookingFromDB,
+   payForPrivateBooking,
+   verifyPayment,
 };
 
 export type TGkvBookingPayloadType = z.infer<
@@ -118,3 +204,10 @@ export type TGkvBookingPayloadType = z.infer<
 export type TPrivateBookingPayloadType = z.infer<
    typeof privateBookingCreateSchema.shape.body
 >;
+export type TGetAllBookingQuery = z.infer<
+   typeof getAllBookingFromDB.shape.query
+>;
+export type TPayForBookingByID = z.infer<
+   typeof payForPrivateBooking.shape.body
+>;
+export type TVerifyPayment = z.infer<typeof verifyPayment.shape.body>;
