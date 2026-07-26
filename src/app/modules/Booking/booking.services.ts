@@ -25,12 +25,12 @@ import {
 } from "./booking.constant";
 import { Pricing } from "../Pricing";
 import { Surcharge, type ISurcharge, type ISurchargeDoc } from "../Surcharge";
-
 import mongoose, { Types, type PipelineStage } from "mongoose";
-import type { IPrivateBookingDoc } from "./booking.interface";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import { Transaction, TransactionStatus } from "../Transaction";
 import { TrackingState } from "../TrackingState";
+
+
 
 const createGkbBooking = async (
    payload: TGkvBookingPayloadType,
@@ -1123,7 +1123,6 @@ const startBookingByDriver = async (
       throw error;
    }
 };
-
 
 export const BookingServices = {
    createGkbBooking,

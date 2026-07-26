@@ -1,20 +1,27 @@
 import app from "./app";
 import { configs } from "./app/configs";
 import { connectDB } from "./app/utils/connect-db";
-import { Server } from "http";
+import { createServer, Server } from "http";
 import { seedSuperAdmin } from "./app/utils/seed-super-admin";
+import { initSocket } from "./app/configs/socket";
 let server: Server;
 //  boostrap function :
 const boostrap = async () => {
    try {
       await connectDB(configs?.databaseUrl);
-
       console.log("✅ Database connected  successfully!");
+
+      const httpServer = createServer(app);
+
+      // Initialize Socket Server with the HTTP wrapper
+      initSocket(httpServer);
 
       await seedSuperAdmin();
       // server listen :
-      server = app.listen(configs?.port, () => {
-         console.log(`🧑‍🚀🚀 Server is running on ${configs?.port}`);
+      server = httpServer.listen(configs?.port, () => {
+         console.log(
+            `🧑‍🚀🚀 Server is running with WebSockets on ${configs?.port}`,
+         );
       });
    } catch (err) {
       console.error("Bootstrap error", err);
