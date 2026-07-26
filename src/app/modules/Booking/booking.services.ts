@@ -30,6 +30,7 @@ import mongoose, { Types, type PipelineStage } from "mongoose";
 import type { IPrivateBookingDoc } from "./booking.interface";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import { Transaction, TransactionStatus } from "../Transaction";
+import { TrackingState } from "../TrackingState";
 
 const createGkbBooking = async (
    payload: TGkvBookingPayloadType,
@@ -466,6 +467,7 @@ const getBookingsFromDB = async (query: TGetAllBookingQuery) => {
       {
          $addFields: {
             // Company User
+            assignedDriver: { $ifNull: ["$assignedDriver", null] },
             companyId: "$companyDetails._id",
             companyName: "$companyDetails.name",
             companyEmail: "$companyDetails.email",
@@ -550,57 +552,81 @@ const getBookingsFromDB = async (query: TGetAllBookingQuery) => {
    };
 };
 
-const assignDriver = async (
-   companyUser: IAuthDoc,
-   bookingId: string,
-   driverId: string,
-) => {
-   const booking = await Booking.findOne({
-      _id: bookingId,
-      company: companyUser._id,
-   });
-   if (!booking)
-      throw new AppError(
-         httpStatus.NOT_FOUND,
-         "Booking details not found or doesn't belong to your company.",
-      );
+const validateBookingForAssignment = async (bookingId: string) => {
+   const booking = await Booking.findById(bookingId);
 
-   // Validate status
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found.");
+   }
+
+   if (booking.assignedDriver) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "A driver has already been assigned to this booking.",
+      );
+   }
+
    if (
       booking.bookingStatus === BookingStatus.CANCELLED ||
       booking.bookingStatus === BookingStatus.COMPLETED
    ) {
       throw new AppError(
          httpStatus.BAD_REQUEST,
-         `You cannot assign a driver to a ride that is already ${booking.bookingStatus.toLowerCase()}.`,
+         `You cannot assign a driver because the booking is already ${booking.bookingStatus.toLowerCase()}.`,
       );
    }
 
-   // if (booking.bookingType === "private") {
-   //    const privateBooking = await PrivateBooking.findOne({
-   //       _id: booking?._id,
-   //    });
+   if (booking.bookingStatus !== BookingStatus.NEW) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         `Only bookings with status "${BookingStatus.NEW}" can be assigned.`,
+      );
+   }
 
-   //    if (
-   //       privateBooking?.paymentMethod === "BANK_TRANSFER" &&
-   //       privateBooking.paymentStatus !== "PAID"
-   //    ) {
-   //       throw new AppError(
-   //          httpStatus.BAD_REQUEST,
-   //          "While payment type is bank transfer. Booking should be paid before assign.",
-   //       );
-   //    }
-   // }
+   if (booking.bookingType === BookingType.PRIVATE) {
+      const privateBooking = await PrivateBooking.findById(booking._id);
 
-   // Defensive authorization: Ensure the selected driver profile exists under this Company Owner's umbrella
+      if (!privateBooking) {
+         throw new AppError(httpStatus.NOT_FOUND, "Private booking not found.");
+      }
+
+      if (
+         privateBooking.paymentMethod === PaymentMethod.BANK_TRANSFER &&
+         privateBooking.paymentStatus !== BookingPaymentStatus.PAID
+      ) {
+         throw new AppError(
+            httpStatus.BAD_REQUEST,
+            "Bank transfer bookings must be paid before assigning a driver.",
+         );
+      }
+   }
+
+   return booking;
+};
+
+const assignDriverByCompany = async (
+   companyUser: IAuthDoc,
+   bookingId: string,
+   driverId: string,
+) => {
+   const booking = await validateBookingForAssignment(bookingId);
+
+   if (booking.company.toString() !== companyUser._id.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This booking does not belong to your company.",
+      );
+   }
+
    const driverProfile = await Driver.findOne({
       user: driverId,
       company: companyUser._id,
    });
+
    if (!driverProfile) {
       throw new AppError(
          httpStatus.FORBIDDEN,
-         "Access denied. The selected driver is not registered under your company.",
+         "The selected driver does not belong to your company.",
       );
    }
 
@@ -609,14 +635,11 @@ const assignDriver = async (
       role: AuthRole.DRIVER,
       status: AuthStatus.ACTIVE,
    });
+
    if (!driverUser) {
-      throw new AppError(
-         httpStatus.NOT_FOUND,
-         "The driver is currently inactive or deleted.",
-      );
+      throw new AppError(httpStatus.NOT_FOUND, "Driver not found or inactive.");
    }
 
-   // Collision warning logic (Checking if driver has conflicting rides at identical date/times)
    const conflictExists = await Booking.exists({
       assignedDriver: driverId,
       rideDate: booking.rideDate,
@@ -625,15 +648,100 @@ const assignDriver = async (
    });
 
    if (conflictExists) {
-      // We throw warning so the admin knows they are assigning a driver who is already busy
       throw new AppError(
          httpStatus.CONFLICT,
-         "This driver is already assigned to another ride at the same date and time.",
+         "This driver already has another booking at the same date and time.",
       );
    }
 
    booking.assignedDriver = driverUser._id;
    booking.bookingStatus = BookingStatus.ASSIGNED;
+
+   await booking.save();
+
+   return booking;
+};
+
+const assignBookingToSelf = async (driverUser: IAuthDoc, bookingId: string) => {
+   const booking = await validateBookingForAssignment(bookingId);
+
+   const driverProfile = await Driver.findOne({
+      user: driverUser._id,
+   });
+
+   if (!driverProfile) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found.");
+   }
+
+   if (driverProfile.company.toString() !== booking.company.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This booking does not belong to your company.",
+      );
+   }
+
+   const conflictExists = await Booking.exists({
+      assignedDriver: driverUser._id,
+      rideDate: booking.rideDate,
+      rideTime: booking.rideTime,
+      bookingStatus: BookingStatus.ASSIGNED,
+   });
+
+   if (conflictExists) {
+      throw new AppError(
+         httpStatus.CONFLICT,
+         "You already have another booking at the same date and time.",
+      );
+   }
+
+   booking.assignedDriver = driverUser._id;
+   booking.bookingStatus = BookingStatus.ASSIGNED;
+
+   await booking.save();
+
+   return booking;
+};
+
+const rejectAssignment = async (driverUser: IAuthDoc, bookingId: string) => {
+   const booking = await Booking.findById(bookingId);
+
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found.");
+   }
+
+   if (booking.bookingStatus !== BookingStatus.ASSIGNED) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         `You cannot reject a booking with status "${booking.bookingStatus}".`,
+      );
+   }
+
+   const driverProfile = await Driver.findOne({
+      user: driverUser._id,
+   });
+
+   if (!driverProfile) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found.");
+   }
+
+   if (driverProfile.company.toString() !== booking.company.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This booking does not belong to your company.",
+      );
+   }
+
+   if (booking.assignedDriver?.toString() !== driverUser._id.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This booking is not assigned to you.",
+      );
+   }
+
+   // Reject assignment
+   booking.assignedDriver = undefined;
+   booking.bookingStatus = BookingStatus.NEW;
+
    await booking.save();
 
    return booking;
@@ -923,10 +1031,108 @@ const verifyPayment = async (
    }
 };
 
+// ** Start Booking Live Tracking**
+const startBookingByDriver = async (
+   driverUser: IAuthDoc,
+   bookingId: string,
+   driverCoords: { longitude: number; latitude: number }, // ড্রাইভারের লাইভ জিপিএস
+) => {
+   const { longitude: driverLng, latitude: driverLat } = driverCoords;
+
+   const booking = await Booking.findById(bookingId);
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found.");
+   }
+
+   // 1. Is driver assigned ?:
+   const driverProfile = await Driver.findOne({ user: driverUser._id });
+   if (!driverProfile) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found.");
+   }
+
+   if (booking.assignedDriver?.toString() !== driverUser._id.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "Access denied. This booking is not assigned to you.",
+      );
+   }
+
+   // 2. Booking Status checking:
+   if (booking.bookingStatus !== BookingStatus.ASSIGNED) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "This ride cannot be started.",
+      );
+   }
+
+   // 3. driver coordinates within 50  km
+   const [pickupLng, pickupLat] = booking.pickupLocation.coordinates;
+
+   // 4. Distance calculation :
+   const distanceInKm = calculateDistance(
+      driverLng,
+      driverLat,
+      pickupLng,
+      pickupLat,
+   );
+   const distanceInMeters = distanceInKm * 1000;
+
+   console.log({ distanceInKm, distanceInMeters });
+
+   // Check  is distance 50 ? :
+   if (distanceInMeters > 100) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         `Sie müssen sich am Abholort befinden, um die Fahrt zu starten. Sie sind aktuell ca. ${Math.round(distanceInMeters)} Meter entfernt (maximal zulässiger Abstand: 100 Meter).`,
+      );
+   }
+
+   const session = await mongoose.startSession();
+   try {
+      session.startTransaction();
+
+      booking.bookingStatus = BookingStatus.STARTED;
+      const updatedBooking = await booking.save({ session });
+
+      const coordinatesStringArray =
+         booking.pickupLocation.coordinates.map(String);
+
+      const tracking = await TrackingState.findOneAndUpdate(
+         { booking: booking._id },
+         {
+            $set: {
+               address: booking.pickupAddress,
+               addressLocation: {
+                  type: "Point",
+                  coordinates: coordinatesStringArray,
+               },
+               progress: 0.0,
+               running: true,
+            },
+         },
+         { returnDocument: "after", upsert: true, session },
+      );
+
+      await session.commitTransaction();
+      await session.endSession();
+
+      return { booking: updatedBooking, tracking };
+   } catch (error) {
+      await session.abortTransaction();
+      await session.endSession();
+      throw error;
+   }
+};
+
+
 export const BookingServices = {
    createGkbBooking,
    createPrivateBooking,
    getBookingsFromDB,
    payForBookingByID,
    verifyPayment,
+   assignDriverByCompany,
+   assignBookingToSelf,
+   rejectAssignment,
+   startBookingByDriver,
 };

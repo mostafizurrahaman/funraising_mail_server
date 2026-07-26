@@ -35,11 +35,33 @@ router.post(
    validateRequest(BookingValidationSchema.payForPrivateBooking),
    BookingController.payForBookingByID,
 );
-router.post(
-   "/:id/verify",
+
+router.patch(
+   "/:id/assign-driver",
    auth(AuthRole.COMPANY),
-   validateRequest(BookingValidationSchema.verifyPayment),
-   BookingController.verifyPayment,
+   validateRequest(BookingValidationSchema.assignDriverByCompanySchema),
+   BookingController.assignDriverByCompany,
+);
+
+router.patch(
+   "/:id/assign-self",
+   auth(AuthRole.DRIVER),
+   validateRequest(BookingValidationSchema.assignDriverBySelfSchema),
+   BookingController.assignBookingToSelf,
+);
+
+router.patch(
+   "/:id/reject",
+   auth(AuthRole.DRIVER),
+   validateRequest(BookingValidationSchema.rejectBookingByIDSchema),
+   BookingController.rejectTheAssignment,
+);
+
+router.patch(
+   "/:id/start",
+   auth(AuthRole.DRIVER),
+   validateRequest(BookingValidationSchema.startBookingSchema),
+   BookingController.startBooking,
 );
 
 export const BookingRoutes = router;

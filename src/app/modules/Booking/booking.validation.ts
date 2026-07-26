@@ -190,12 +190,55 @@ const payForPrivateBooking = z.object({
       }),
 });
 
+const assignDriverByCompanySchema = z.object({
+   params: z.object({
+      id: requiredMongooseId("Booking ID"),
+   }),
+   body: z.object({
+      driverId: requiredString("Driver ID"),
+   }),
+});
+const assignDriverBySelfSchema = z.object({
+   params: z.object({
+      id: requiredMongooseId("Booking ID"),
+   }),
+});
+const rejectBookingByIDSchema = z.object({
+   params: z.object({
+      id: requiredMongooseId("Booking ID"),
+   }),
+});
+
+const startBookingSchema = z.object({
+   params: z.object({
+      id: requiredMongooseId("Booking ID"),
+   }),
+   body: z.object({
+      longitude: z.coerce
+         .number({
+            error: "Driver's current longitude is required to start.",
+         })
+         .min(-180)
+         .max(180),
+      latitude: z.coerce
+         .number({
+            error: "Driver's current latitude is required to start.",
+         })
+         .min(-90)
+         .max(90),
+   }),
+});
+
 export const BookingValidationSchema = {
    gkvBookingCreateSchema,
    privateBookingCreateSchema,
    getAllBookingFromDB,
    payForPrivateBooking,
    verifyPayment,
+   assignDriverByCompanySchema,
+   assignDriverBySelfSchema,
+   rejectBookingByIDSchema,
+   startBookingSchema,
 };
 
 export type TGkvBookingPayloadType = z.infer<
@@ -211,3 +254,11 @@ export type TPayForBookingByID = z.infer<
    typeof payForPrivateBooking.shape.body
 >;
 export type TVerifyPayment = z.infer<typeof verifyPayment.shape.body>;
+
+export type TAssignDriverByCompanyPayloadType = z.infer<
+   typeof assignDriverByCompanySchema.shape.body
+>;
+
+export type TStartBookingPayloadType = z.infer<
+   typeof startBookingSchema.shape.body
+>;
