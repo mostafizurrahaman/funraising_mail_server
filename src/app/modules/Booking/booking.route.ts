@@ -58,6 +58,13 @@ router.patch(
 );
 
 router.patch(
+   "/:id/cash-receive",
+   auth(AuthRole.DRIVER),
+   validateRequest(BookingValidationSchema.cashReceiveForBookingByIDSchema),
+   BookingController.cashReceivedForBooking,
+);
+
+router.patch(
    "/:id/start",
    auth(AuthRole.DRIVER),
    validateRequest(BookingValidationSchema.startBookingSchema),

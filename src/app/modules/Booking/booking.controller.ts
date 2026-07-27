@@ -124,6 +124,21 @@ const rejectTheAssignment = catchAsync(async (req, res) => {
    });
 });
 
+const cashReceivedForBooking = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+   const bookingId = req.params.id as string;
+   const result = await BookingServices.cashReceiveForBookingByID(
+      user,
+      bookingId,
+   );
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Cash received for booking successfully.",
+      data: result,
+   });
+});
+
 const startBooking = catchAsync(async (req, res) => {
    const user = await getUserFromRequest(req);
    const bookingId = req.params.id as string;
@@ -151,4 +166,5 @@ export const BookingController = {
    assignBookingToSelf,
    rejectTheAssignment,
    startBooking,
+   cashReceivedForBooking,
 };

@@ -30,8 +30,6 @@ import type { IAuthDoc } from "../Auth/auth.interface";
 import { Transaction, TransactionStatus } from "../Transaction";
 import { TrackingState } from "../TrackingState";
 
-
-
 const createGkbBooking = async (
    payload: TGkvBookingPayloadType,
    prescriptionFiles: TMulterFile[],
@@ -1031,11 +1029,103 @@ const verifyPayment = async (
    }
 };
 
+// ** CASH receive
+
+const cashReceiveForBookingByID = async (
+   driverUser: IAuthDoc,
+   bookingId: string,
+) => {
+   // ?? Check
+   const booking = await PrivateBooking.findById(bookingId);
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found.");
+   }
+
+   // 1. Is driver assigned ?:
+   const driverProfile = await Driver.findOne({ user: driverUser._id });
+   if (!driverProfile) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found.");
+   }
+
+   if (booking.assignedDriver?.toString() !== driverUser._id.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "Access denied. This booking is not assigned to you.",
+      );
+   }
+
+   // 2. Booking Status checking:
+   if (booking.bookingStatus !== BookingStatus.ASSIGNED) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "You can receive cash while the booking status is assigned.",
+      );
+   }
+
+   if (booking.paymentMethod !== PaymentMethod.CASH) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         `Only driver can receive cash payment. Payment method is  "${booking.paymentMethod}"`,
+      );
+   }
+
+   const session = await mongoose.startSession();
+
+   try {
+      session.startTransaction();
+
+      booking.paymentStatus = BookingPaymentStatus.PAID;
+
+      const updatedBooking = await booking.save({
+         session,
+         validateBeforeSave: true,
+      });
+
+      if (!updatedBooking) {
+         throw new AppError(
+            httpStatus.BAD_REQUEST,
+            "Failed to update booking payment status.",
+         );
+      }
+
+      const payment = await Transaction.findOneAndUpdate(
+         {
+            booking: updatedBooking?._id,
+            status: TransactionStatus.PENDING,
+         },
+         {
+            $set: {
+               status: TransactionStatus.SUCCESS,
+            },
+         },
+         {
+            sort: { createdAt: -1 },
+            returnDocument: "after",
+            session,
+         },
+      );
+
+      if (!updatedBooking) {
+         throw new AppError(
+            httpStatus.BAD_REQUEST,
+            "Failed to update transaction info.",
+         );
+      }
+
+      await session.commitTransaction();
+   } catch (error) {
+      await session.abortTransaction();
+      throw error;
+   } finally {
+      await session.endSession();
+   }
+};
+
 // ** Start Booking Live Tracking**
 const startBookingByDriver = async (
    driverUser: IAuthDoc,
    bookingId: string,
-   driverCoords: { longitude: number; latitude: number }, // ড্রাইভারের লাইভ জিপিএস
+   driverCoords: { longitude: number; latitude: number },
 ) => {
    const { longitude: driverLng, latitude: driverLat } = driverCoords;
 
@@ -1063,6 +1153,22 @@ const startBookingByDriver = async (
          httpStatus.BAD_REQUEST,
          "This ride cannot be started.",
       );
+   }
+
+   if (booking.bookingType === "private") {
+      const privateBooking = await PrivateBooking.findOne({
+         _id: booking?._id,
+      });
+
+      if (
+         privateBooking?.paymentMethod === PaymentMethod.CASH &&
+         privateBooking.paymentStatus !== BookingPaymentStatus.PAID
+      ) {
+         throw new AppError(
+            httpStatus.NOT_FOUND,
+            "Booking payment is pending. Please receive the cash.",
+         );
+      }
    }
 
    // 3. driver coordinates within 50  km
@@ -1133,5 +1239,6 @@ export const BookingServices = {
    assignDriverByCompany,
    assignBookingToSelf,
    rejectAssignment,
+   cashReceiveForBookingByID,
    startBookingByDriver,
 };

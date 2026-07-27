@@ -1,5 +1,5 @@
-import { model, Schema } from "mongoose";
-import type { IInvoiceDoc } from "./invoice.interface";
+import { model, Schema, Types } from "mongoose";
+import type { IInvoiceBookingDoc, IInvoiceDoc } from "./invoice.interface";
 import { InvoiceStatus } from "./invoice.constant";
 
 const invoiceSchema = new Schema<IInvoiceDoc>(
@@ -21,15 +21,6 @@ const invoiceSchema = new Schema<IInvoiceDoc>(
          type: Number,
          required: true,
          min: 0,
-      },
-      bookings: {
-         type: [
-            {
-               type: Schema.Types.ObjectId,
-               ref: "Booking",
-               required: true,
-            },
-         ],
       },
       period: {
          type: String,
@@ -74,4 +65,28 @@ const invoiceSchema = new Schema<IInvoiceDoc>(
    },
 );
 
+const invoiceBookingSchema = new Schema<IInvoiceBookingDoc>(
+   {
+      booking: {
+         type: Schema.Types.ObjectId,
+         ref: "Booking",
+         required: true,
+         unique: true,
+      },
+      invoice: {
+         type: Schema.Types.ObjectId,
+         ref: "Invoice",
+         required: true,
+      },
+   },
+   {
+      timestamps: true,
+      versionKey: false,
+   },
+);
+
 export const Invoice = model<IInvoiceDoc>("Invoice", invoiceSchema);
+export const InvoiceBooking = model<IInvoiceBookingDoc>(
+   "InvoiceBooking",
+   invoiceBookingSchema,
+);

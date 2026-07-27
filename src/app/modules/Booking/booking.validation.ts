@@ -209,6 +209,12 @@ const rejectBookingByIDSchema = z.object({
    }),
 });
 
+const cashReceiveForBookingByIDSchema = z.object({
+   params: z.object({
+      id: requiredMongooseId("Booking ID"),
+   }),
+});
+
 const startBookingSchema = z.object({
    params: z.object({
       id: requiredMongooseId("Booking ID"),
@@ -239,6 +245,7 @@ export const BookingValidationSchema = {
    assignDriverBySelfSchema,
    rejectBookingByIDSchema,
    startBookingSchema,
+   cashReceiveForBookingByIDSchema,
 };
 
 export type TGkvBookingPayloadType = z.infer<
