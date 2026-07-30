@@ -33,6 +33,22 @@ const updateSurchargeByID = catchAsync(async (req, res) => {
    });
 });
 
+const deleteSurchargeById = catchAsync(async (req, res) => {
+   const surchargeId = req.params.id as string;
+   const user = await getUserFromRequest(req);
+   const result = await SurchargeServices.deleteSurchargeByIDFromDB(
+      user,
+      surchargeId,
+   );
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Surcharge deleted successfully!",
+      data: result,
+   });
+});
+
 const getAllSurchargeByCompanyId = catchAsync(async (req, res) => {
    const companyId = req.params.companyId as string;
    const result = await SurchargeServices.getAllSurchargeFromDB(companyId);
@@ -48,4 +64,5 @@ export const SurchargeController = {
    createSurcharge,
    updateSurchargeByID,
    getAllSurchargeByCompanyId,
+   deleteSurchargeById,
 };

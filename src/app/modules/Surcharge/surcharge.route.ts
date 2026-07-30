@@ -27,4 +27,11 @@ router.get(
    SurchargeController.getAllSurchargeByCompanyId,
 );
 
+router.delete(
+   "/:id",
+   auth(AuthRole.COMPANY),
+   validateRequest(SurchargeValidationSchema.deleteSurchargeSchema),
+   SurchargeController.deleteSurchargeById,
+);
+
 export const SurchargeRoutes = router;

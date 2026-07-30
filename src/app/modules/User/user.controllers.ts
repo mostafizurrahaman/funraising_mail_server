@@ -33,7 +33,21 @@ const updateStatus = catchAsync(async (req, res) => {
    });
 });
 
+const getCompanyByCode = catchAsync(async (req, res) => {
+   const companyCode = req.params.companyCode as string;
+
+   const result = await UserServices.getCompanyByCompanyCode(companyCode);
+
+   sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Company retrieved successfully.",
+      data: result,
+   });
+});
+
 export const userController = {
    getAllUser,
    updateStatus,
+   getCompanyByCode,
 };

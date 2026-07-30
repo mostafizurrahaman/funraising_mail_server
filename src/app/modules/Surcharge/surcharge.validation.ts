@@ -23,6 +23,11 @@ const updateSurchargeSchema = z.object({
       amount: positiveNumber("amount"),
    }),
 });
+const deleteSurchargeSchema = z.object({
+   params: z.object({
+      id: requiredMongooseId("Surcharge ID"),
+   }),
+});
 
 const getAllSurchargeByCompanyId = z.object({
    params: z.object({
@@ -33,6 +38,7 @@ const getAllSurchargeByCompanyId = z.object({
 export const SurchargeValidationSchema = {
    createSurchargeSchema,
    updateSurchargeSchema,
+   deleteSurchargeSchema,
    getAllSurchargeByCompanyId,
 };
 

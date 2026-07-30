@@ -22,4 +22,9 @@ router.patch(
    userController.updateStatus,
 );
 
+router.get(
+   "/:companyCode",
+   validateRequest(UserValidations.getCompanyByCompanyCode),
+   userController.getCompanyByCode,
+);
 export const userRoutes = router;

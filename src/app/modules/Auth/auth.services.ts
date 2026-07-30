@@ -236,7 +236,7 @@ const organizationLogin = async (payload: TLoginPayload) => {
       email: existingUser?.email,
       phone: existingUser?.phone!,
       profileImage: existingUser.profileImage!,
-      role: existingUser.status!,
+      role: existingUser.role!,
       status: existingUser.status!,
    };
 
@@ -315,7 +315,7 @@ const adminLogin = async (payload: TLoginPayload) => {
       email: existingUser?.email,
       phone: existingUser?.phone!,
       profileImage: existingUser.profileImage!,
-      role: existingUser.status!,
+      role: existingUser.role!,
       status: existingUser.status!,
    };
 
@@ -394,7 +394,7 @@ const driverLogin = async (payload: TLoginPayload) => {
       email: existingUser?.email,
       phone: existingUser?.phone!,
       profileImage: existingUser.profileImage!,
-      role: existingUser.status!,
+      role: existingUser.role!,
       status: existingUser.status!,
    };
 

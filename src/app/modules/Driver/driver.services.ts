@@ -21,6 +21,7 @@ import {
    driverPasswordChangedTemplate,
    sendEmail,
 } from "@/app/utils/send-email";
+import { Booking, BookingStatus } from "../Booking";
 
 // ** Create Driver **
 const createDriverIntoDB = async (
@@ -491,6 +492,20 @@ const deleteDriverById = async (user: IAuthDoc, driverId: string) => {
    /*
       Few validation we have to later: 
    */
+   //   ?? check has any ongoing task which is not completed yet?:
+   const assignment = await Booking.findOne({
+      assignedDriver: driver?._id,
+      bookingStatus: {
+         $nin: [BookingStatus.COMPLETED, BookingStatus.CANCELLED],
+      },
+   });
+
+   if (assignment) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "This is driver has an active assigned booking.",
+      );
+   }
 
    const session = await mongoose.startSession();
 

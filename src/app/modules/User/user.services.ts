@@ -5,10 +5,12 @@ import type {
    TGetAllUserQueryType,
    TUpdateUserStatusPayloadType,
 } from "./user.validations";
-import { AuthPermission, AuthRole } from "../Auth/auth.constant";
+import { AuthPermission, AuthRole, AuthStatus } from "../Auth/auth.constant";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import httpStatus from "http-status";
 import { AppError } from "@/app/errors";
+import { Company } from "../Company/company.model";
+
 const getAllUserFromDB = async (query: TGetAllUserQueryType) => {
    const {
       page: currentPage = 1,
@@ -133,6 +135,13 @@ const getAllUserFromDB = async (query: TGetAllUserQueryType) => {
             $cond: [
                { $eq: ["$role", AuthRole.COMPANY] },
                "$companyDetails.serviceArea",
+               "$$REMOVE",
+            ],
+         },
+         fleetSize: {
+            $cond: [
+               { $eq: ["$role", AuthRole.COMPANY] },
+               "$companyDetails.fleetSize",
                "$$REMOVE",
             ],
          },
@@ -362,7 +371,29 @@ const updateStatus = async (
       status: existingUser.status,
    };
 };
+
+// Get the company by company code:
+const getCompanyByCompanyCode = async (companyCode: string) => {
+   // ?? Check is there any company exists with this id?:
+   const company = await Company.findOne({
+      companyCode: companyCode,
+   }).populate<{ user: IAuthDoc }>("user");
+
+   if (!company) {
+      throw new AppError(httpStatus.NOT_FOUND, "Company not found!");
+   }
+
+   if (company.user.status !== AuthStatus.ACTIVE) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         `This company is not active. Current status "${company.user.status}"`,
+      );
+   }
+
+   return company;
+};
 export const UserServices = {
    getAllUserFromDB,
    updateStatus,
+   getCompanyByCompanyCode,
 };

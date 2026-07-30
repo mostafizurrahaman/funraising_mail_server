@@ -79,10 +79,6 @@ authSchema.post("save", function (doc, next) {
    next();
 });
 
-authSchema.post("find", function (next) {
-   next();
-});
-
 // ? Design the model for the AuthSchema:
 
 export const Auth = model<IAuthDoc, IAuthModel>("Auth", authSchema);

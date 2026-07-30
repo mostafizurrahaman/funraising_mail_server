@@ -40,13 +40,22 @@ const updateStatusSchema = z.object({
       ),
    }),
 });
+const getCompanyByCompanyCode = z.object({
+   params: z.object({
+      companyCode: requiredString("Company code"),
+   }),
+});
 
 export const UserValidations = {
    getAllUserSchema,
    updateStatusSchema,
+   getCompanyByCompanyCode,
 };
 
 export type TGetAllUserQueryType = z.infer<typeof getAllUserSchema.shape.query>;
 export type TUpdateUserStatusPayloadType = z.infer<
    typeof updateStatusSchema.shape.body
+>;
+export type TGetCompanyByCompanyCode = z.infer<
+   typeof getCompanyByCompanyCode.shape.params
 >;
