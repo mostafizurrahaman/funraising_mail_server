@@ -1,5 +1,6 @@
 import { z, ZodIssueCode } from "zod";
 import { URL_REGEX } from "@/app/constants";
+import mongoose from "mongoose";
 
 /**
  * Creates a required string schema.
@@ -131,3 +132,13 @@ export const urlString = (fieldName = "URL") =>
       .regex(URL_REGEX, {
          message: `${fieldName} must be a valid http/https URL`,
       });
+
+export const requiredMongooseId = (fieldName: string) => {
+   return z
+      .string({
+         error: `${fieldName} is required.`,
+      })
+      .refine((value) => mongoose.isValidObjectId(value), {
+         message: `${fieldName} must be a valid MongoDB ObjectId.`,
+      });
+};

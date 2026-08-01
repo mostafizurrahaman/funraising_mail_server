@@ -4,6 +4,10 @@ import cors from "cors";
 import { configs } from "@/app/configs";
 import { notFound } from "./app/middlewares";
 import globalErrorHandler from "./app/middlewares/global-error-handler";
+import { allRoutes } from "./app/routes";
+import dns from "node:dns";
+
+dns.setServers(["1.1.1.1"]);
 
 // Create an app :
 
@@ -14,7 +18,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
    cors({
-      origin: "*",
+      origin: "http://localhost:3000",
       credentials: true,
    }),
 );
@@ -34,6 +38,8 @@ app.get("/health-check", (req, res) => {
       message: `Your server health is okay!`,
    });
 });
+
+app.use("/api/v1", allRoutes);
 
 // Not found page:
 app.use(notFound);

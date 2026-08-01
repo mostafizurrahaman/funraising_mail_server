@@ -2,6 +2,9 @@ import dotenv from "dotenv";
 import path from "path";
 import z from "zod";
 
+import { requiredNumber, requiredString } from "../utils";
+import { GERMANY_PHONE_NUMBER_REGEX } from "../constants";
+
 //zod Validation for Configs
 
 const envValidationSchema = z.object({
@@ -15,6 +18,9 @@ const envValidationSchema = z.object({
       .min(4, {
          error: "Port length should be 4 char like 5000,  8080",
       }),
+   databaseUrl: z.string({
+      error: "Database is required!",
+   }),
    // JWT VALIDATION :
    accessTokenSecret: z.string({
       error: "Access token secret is required!",
@@ -34,6 +40,30 @@ const envValidationSchema = z.object({
    resetTokenExpiresIn: z.string({
       error: "Reset token secret is required!",
    }),
+
+   passwordSaltRound: z.number({
+      error: "Password salt round is required!",
+   }),
+   cloudinaryApiKey: requiredString("cloudinaryApiKey"),
+   cloudinaryApiSecret: requiredString("cloudinaryApiSecret"),
+   cloudinaryCloudName: requiredString("cloudinaryCloudName"),
+
+   superAdminName: requiredString("Super Admin Name"),
+   superAdminEmail: requiredString("Super Admin Email"),
+   superAdminPhone: z
+      .string({
+         error: `phone number should be  string!`,
+      })
+      .regex(GERMANY_PHONE_NUMBER_REGEX, {
+         error: "Phone number is invalid!",
+      }),
+   superAdminPassword: requiredString("Password"),
+
+   // Node mailer :
+   nodemailerEmail: requiredString("Nodemailer email"),
+   nodemailerPassword: requiredString("Nodemailer password"),
+   nodemailerHost: requiredString("Nodemailer host"),
+   nodemailerPort: requiredNumber("Nodemailer port"),
 });
 
 type TConfigType = z.infer<typeof envValidationSchema>;
@@ -45,6 +75,7 @@ dotenv.config({
 const envs: TConfigType = {
    nodeEnv: process.env.NODE_ENV!,
    port: process.env.PORT!,
+   databaseUrl: process.env.DATABASE_URL!,
 
    // JWT FIELDS:
    accessTokenSecret: process.env.ACCESS_TOKEN_SECRET!,
@@ -53,6 +84,22 @@ const envs: TConfigType = {
    refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN!,
    resetTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
    resetTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN!,
+   passwordSaltRound: Number(process.env.PASSWORD_SALT_ROUND),
+   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY!,
+   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET!,
+   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+
+   // SUPER Admin  env:
+   superAdminName: process.env.SUPER_ADMIN_NAME!,
+   superAdminEmail: process.env.SUPER_ADMIN_EMAIL!,
+   superAdminPhone: process.env.SUPER_ADMIN_PHONE!,
+   superAdminPassword: process.env.SUPER_ADMIN_PASSWORD!,
+
+   // NODE MAILER :
+   nodemailerEmail: process.env.NODEMAILER_EMAIL!,
+   nodemailerPassword: process.env.NODEMAILER_PASSWORD!,
+   nodemailerHost: process.env.NODEMAILER_HOST!,
+   nodemailerPort: Number(process.env.NODEMAILER_PORT),
 };
 
 const validateEnv = () => {
@@ -60,7 +107,7 @@ const validateEnv = () => {
 
    console.log("ZOD ERRORS", error);
 
-   return data;
+   return data as TConfigType;
 };
 
 export const configs = validateEnv();

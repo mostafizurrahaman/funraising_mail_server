@@ -1,0 +1,29 @@
+import { Router } from "express";
+import { BankController } from "./bank.controller";
+import { auth } from "@/app/middlewares/auth";
+import { validateRequest } from "@/app/middlewares";
+import { BankValidationSchema } from "./bank.validation";
+import { AuthRole } from "../Auth/auth.constant";
+
+const router = Router();
+
+// Add bank details
+router.post(
+   "/",
+   auth(AuthRole.COMPANY),
+   validateRequest(BankValidationSchema.createSchema),
+   BankController.create,
+);
+
+// Update bank details
+router.patch(
+   "/",
+   auth(AuthRole.COMPANY),
+   validateRequest(BankValidationSchema.updateSchema),
+   BankController.update,
+);
+
+// Get my bank details
+router.get("/me", auth(AuthRole.COMPANY), BankController.getMyBank);
+
+export const BankRoutes = router;
