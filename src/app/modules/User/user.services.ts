@@ -21,8 +21,10 @@ const getAllUserFromDB = async (query: TGetAllUserQueryType) => {
       toDate,
       searchTerm,
       sortBy = "createdAt",
+      postalCode,
       sortOrder = "asc",
    } = query;
+   console.log(postalCode);
 
    const page = Math.max(Number(currentPage), 1);
    const limit = Number(currentLimit);
@@ -128,6 +130,13 @@ const getAllUserFromDB = async (query: TGetAllUserQueryType) => {
             $cond: [
                { $eq: ["$role", AuthRole.COMPANY] },
                "$companyDetails.address",
+               "$$REMOVE",
+            ],
+         },
+         postalCode: {
+            $cond: [
+               { $eq: ["$role", AuthRole.COMPANY] },
+               "$companyDetails.postalCode",
                "$$REMOVE",
             ],
          },
@@ -239,6 +248,7 @@ const getAllUserFromDB = async (query: TGetAllUserQueryType) => {
                   companyProfileImage: "$profileImage",
                   companyProfileName: "$companyDetails.companyName",
                   companyCode: "$companyDetails.companyCode",
+                  postalCode: "$companyDetails.postalCode",
                },
             },
          ],
@@ -246,6 +256,13 @@ const getAllUserFromDB = async (query: TGetAllUserQueryType) => {
       },
    });
 
+   if (postalCode && role === "company") {
+      pipeline.push({
+         $match: {
+            postalCode: postalCode,
+         },
+      });
+   }
    pipeline.push({
       $unwind: {
          path: "$driverCompanyUserDetails",

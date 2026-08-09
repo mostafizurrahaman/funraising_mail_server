@@ -26,7 +26,20 @@ const getPricingForCompany = catchAsync(async (req, res) => {
    });
 });
 
+const getPublicPricingByCompanyId = catchAsync(async (req, res) => {
+   const { companyId } = req.params;
+   const result = await PricingServices.getPublicPricingByCompanyId(companyId as string);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Public pricing retrieved successfully.",
+      data: result,
+   });
+});
+
 export const PricingController = {
    updateAndCreatePricing,
    getPricingForCompany,
+   getPublicPricingByCompanyId,
 };

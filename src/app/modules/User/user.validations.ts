@@ -24,6 +24,7 @@ const getAllUserSchema = z.object({
       role: optionalEnumString(AuthRoleValues, "Role"),
       sortBy: optionalEnumString(sortableFields, "Sort by"),
       sortOrder: optionalEnumString(sortingOrderValues, "Sort order"),
+      postalCode: optionalDate("Postal code"),
       fromDate: optionalDate("From date"),
       toDate: optionalDate("To date"),
    }),

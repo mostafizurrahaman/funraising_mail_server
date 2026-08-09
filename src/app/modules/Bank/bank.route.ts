@@ -26,4 +26,7 @@ router.patch(
 // Get my bank details
 router.get("/me", auth(AuthRole.COMPANY), BankController.getMyBank);
 
+// Get public bank details by company ID
+router.get("/company/:companyId", BankController.getPublicBankByCompanyId);
+
 export const BankRoutes = router;

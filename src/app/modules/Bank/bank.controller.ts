@@ -43,8 +43,22 @@ const getMyBank = catchAsync(async (req, res) => {
    });
 });
 
+const getPublicBankByCompanyId = catchAsync(async (req, res) => {
+   const { companyId } = req.params;
+
+   const result = await BankServices.getPublicBankByCompanyId(companyId as string);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Public bank details retrieved successfully!",
+      data: result,
+   });
+});
+
 export const BankController = {
    create,
    update,
    getMyBank,
+   getPublicBankByCompanyId,
 };

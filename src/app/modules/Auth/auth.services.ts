@@ -33,6 +33,7 @@ const signupIntoDB = async (
       latitude,
       longitude,
       radiusKm,
+      postalCode,
       note,
    } = payload;
 
@@ -154,6 +155,7 @@ const signupIntoDB = async (
                   coordinates: [longitude, latitude],
                },
                radiusKm,
+               postalCode,
                note,
             },
          ],

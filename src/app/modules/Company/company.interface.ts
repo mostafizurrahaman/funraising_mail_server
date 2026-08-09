@@ -17,6 +17,7 @@ interface ICompany {
    address?: string;
    serviceArea: IGeoJSONPoint;
    fleetSize: number;
+   postalCode?: string;
    radiusKm: number;
    note?: string;
 }

@@ -15,5 +15,6 @@ router.post(
 );
 
 router.get("/", auth(AuthRole.COMPANY), PricingController.getPricingForCompany);
+router.get("/company/:companyId", PricingController.getPublicPricingByCompanyId);
 
 export const PricingRoutes = router;

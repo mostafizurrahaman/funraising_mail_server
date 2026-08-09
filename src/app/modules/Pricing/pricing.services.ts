@@ -47,7 +47,23 @@ const getPricingForCompany = async (user: IAuthDoc) => {
    return existingPricing;
 };
 
+const getPublicPricingByCompanyId = async (companyId: string) => {
+   const existingPricing = await Pricing.findOne({
+      user: companyId,
+   }).select("baseFare perKm -_id");
+
+   if (!existingPricing) {
+      throw new AppError(
+         httpStatus.NOT_FOUND,
+         "Pricing not found for this company.",
+      );
+   }
+
+   return existingPricing;
+};
+
 export const PricingServices = {
    updateAndCreatePricing,
    getPricingForCompany,
+   getPublicPricingByCompanyId,
 };

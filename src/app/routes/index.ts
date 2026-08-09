@@ -8,6 +8,9 @@ import { BankRoutes } from "../modules/Bank";
 import { userRoutes } from "../modules/User/user.routes";
 import { BookingRoutes } from "../modules/Booking";
 import { InvoiceRoutes } from "../modules/Invoice";
+import { AdminRoutes } from "../modules/Admin";
+import { TrackingStateRoutes } from "../modules/TrackingState/tracking-state.route";
+import { DriverPortalRoutes } from "../modules/DriverPortal";
 const router = express.Router();
 
 const routes = [
@@ -42,6 +45,18 @@ const routes = [
    {
       path: "/invoice",
       route: InvoiceRoutes,
+   },
+   {
+      path: "/admin",
+      route: AdminRoutes,
+   },
+   {
+      path: "/tracking-state",
+      route: TrackingStateRoutes,
+   },
+   {
+      path: "/driver-portal",
+      route: DriverPortalRoutes,
    },
 ];
 
