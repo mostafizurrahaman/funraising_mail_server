@@ -131,6 +131,7 @@ const getAllBookingFromDB = z.object({
       searchTerm: optionalString("search term"),
       bookingStatus: optionalEnumString(BookingStatusValues, "Booking Status"),
       bookingNumber: optionalString("Booking number"),
+      bookingId: requiredMongooseId("Booking ID").optional(),
       paymentStatus: optionalEnumString(
          BookingPaymentStatusValues,
          "Payment Status",

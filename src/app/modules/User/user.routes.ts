@@ -10,7 +10,7 @@ const router: Router = express.Router();
 
 router.get(
    "/all",
-   auth(AuthRole.ADMIN, AuthRole.SUPER_ADMIN),
+   // auth(AuthRole.ADMIN, AuthRole.SUPER_ADMIN),
    validateRequest(UserValidations.getAllUserSchema),
    userController.getAllUser,
 );

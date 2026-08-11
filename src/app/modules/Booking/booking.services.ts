@@ -29,6 +29,7 @@ import mongoose, { Types, type PipelineStage } from "mongoose";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import { Transaction, TransactionStatus } from "../Transaction";
 import { TrackingState } from "../TrackingState";
+import { getIO } from "../../configs/socket";
 
 const createGkbBooking = async (
    payload: TGkvBookingPayloadType,
@@ -170,6 +171,15 @@ const createGkbBooking = async (
       prescriptionAttached: fileUrls?.length > 0,
       prescriptionFiles: fileUrls,
    });
+
+   // Emit socket event to the company room
+   try {
+      getIO()
+         .to(`company_room_${company?._id}`)
+         .emit("new_booking", gkvBooking);
+   } catch (error) {
+      console.error("Socket error on new GKV booking:", error);
+   }
 
    return gkvBooking;
 };
@@ -358,6 +368,15 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
       paymentStatus: BookingPaymentStatus.PENDING,
    });
 
+   // Emit socket event to the company room
+   try {
+      getIO()
+         .to(`company_room_${company?._id}`)
+         .emit("new_booking", privateBooking);
+   } catch (error) {
+      console.error("Socket error on new private booking:", error);
+   }
+
    return privateBooking;
 };
 
@@ -376,6 +395,7 @@ const getBookingsFromDB = async (query: TGetAllBookingQuery) => {
       sortBy,
       sortOrder,
       searchTerm,
+      bookingId,
    } = query;
 
    const page = Math.max(Number(currentPage), 1);
@@ -391,7 +411,7 @@ const getBookingsFromDB = async (query: TGetAllBookingQuery) => {
    if (paymentStatus) matchConditions.paymentStatus = paymentStatus;
    if (bookingNumber) matchConditions.bookingNumber = bookingNumber;
    if (bookingType) matchConditions.bookingType = bookingType;
-   if (bookingType) matchConditions.bookingType = bookingType;
+   if (bookingId) matchConditions._id = new Types.ObjectId(bookingId);
 
    if (assignedDriverId) {
       matchConditions.assignedDriver = new Types.ObjectId(assignedDriverId);
@@ -657,6 +677,15 @@ const assignDriverByCompany = async (
 
    await booking.save();
 
+   // Notify the driver in real-time
+   try {
+      getIO()
+         .to(`user_room_${driverUser._id}`)
+         .emit("driver_assigned", booking);
+   } catch (error) {
+      console.error("Socket error on driver assignment:", error);
+   }
+
    return booking;
 };
 
@@ -696,6 +725,15 @@ const assignBookingToSelf = async (driverUser: IAuthDoc, bookingId: string) => {
    booking.bookingStatus = BookingStatus.ASSIGNED;
 
    await booking.save();
+
+   // Notify the driver in real-time (if needed, though they assigned it themselves)
+   try {
+      getIO()
+         .to(`user_room_${driverUser._id}`)
+         .emit("driver_assigned", booking);
+   } catch (error) {
+      console.error("Socket error on self assignment:", error);
+   }
 
    return booking;
 };
@@ -741,6 +779,15 @@ const rejectAssignment = async (driverUser: IAuthDoc, bookingId: string) => {
    booking.bookingStatus = BookingStatus.NEW;
 
    await booking.save();
+
+   // Notify the company in real-time that driver rejected
+   try {
+      getIO()
+         .to(`company_room_${booking.company}`)
+         .emit("booking_rejected", booking);
+   } catch (error) {
+      console.error("Socket error on booking rejection:", error);
+   }
 
    return booking;
 };
