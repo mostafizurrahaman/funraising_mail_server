@@ -5,9 +5,9 @@ import { configs } from "./app/configs";
 import { notFound } from "./app/middlewares";
 import globalErrorHandler from "./app/middlewares/global-error-handler";
 import { allRoutes } from "./app/routes";
-import dns from "node:dns";
+// import dns from "node:dns";
 
-dns.setServers(["1.1.1.1"]);
+// dns.setServers(["1.1.1.1"]);
 
 // Create an app :
 
