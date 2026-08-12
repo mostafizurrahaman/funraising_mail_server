@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { catchAsync, getUserFromRequest, sendResponse } from "@/app/utils";
+import { catchAsync, getUserFromRequest, sendResponse } from "../../utils";
 import { BankServices } from "./bank.services";
 
 const create = catchAsync(async (req, res) => {

@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { catchAsync, getUserFromRequest, sendResponse } from "@/app/utils";
+import { catchAsync, getUserFromRequest, sendResponse } from "../../utils";
 import { PricingServices } from "./pricing.services";
 
 const updateAndCreatePricing = catchAsync(async (req, res) => {

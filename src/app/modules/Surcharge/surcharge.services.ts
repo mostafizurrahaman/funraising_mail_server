@@ -1,14 +1,14 @@
-import { slugify } from "@/app/utils/slugify";
+import { slugify } from "../../utils/slugify";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import type {
    TCreateSurchargePayload,
    TUpdateSurchargePayload,
 } from "./surcharge.validation";
 import { Surcharge } from "./surcharge.model";
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import httpStatus from "http-status";
 import type { PipelineStage } from "mongoose";
-import { getUserFromRequest } from "@/app/utils";
+import { getUserFromRequest } from "../../utils";
 import { Auth } from "../Auth/auth.model";
 
 const createSurchargeIntoDB = async (

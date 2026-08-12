@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { catchAsync, getUserFromRequest, sendResponse } from "@/app/utils";
+import { catchAsync, getUserFromRequest, sendResponse } from "../../utils";
 import { InvoiceServices } from "./invoice.services";
 
 const createInvoice = catchAsync(async (req, res) => {

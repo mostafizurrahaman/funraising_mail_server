@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { InvoiceController } from "./invoice.controller";
 import { AuthRole } from "../Auth/auth.constant";
-import { auth } from "@/app/middlewares/auth";
-import { validateRequest } from "@/app/middlewares/validate-request";
+import { auth } from "../../middlewares/auth";
+import { validateRequest } from "../../middlewares/validate-request";
 import { InvoiceValidationSchema } from "./invoice.validation";
 
 const router = Router();

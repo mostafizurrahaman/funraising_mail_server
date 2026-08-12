@@ -1,6 +1,6 @@
 import multer from "multer";
 import { multerFileFilter } from "./multer-file-filter";
-import type { FileValidationConfig } from "@/app/types/multer.types";
+import type { FileValidationConfig } from "../../types/multer.types";
 
 export const multerFactory = (config: FileValidationConfig) => {
    const { maxSizeInMB = 10 } = config;

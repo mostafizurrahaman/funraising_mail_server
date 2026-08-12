@@ -1,4 +1,4 @@
-import { catchAsync, getUserFromRequest, sendResponse } from "@/app/utils";
+import { catchAsync, getUserFromRequest, sendResponse } from "../../utils";
 import httpStatus from "http-status";
 import { UserServices } from "./user.services";
 

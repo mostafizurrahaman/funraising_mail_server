@@ -1,4 +1,4 @@
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import httpStatus from "http-status";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import { Bank } from "./bank.model";

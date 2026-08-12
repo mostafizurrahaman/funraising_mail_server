@@ -3,7 +3,7 @@ import { Auth } from "../Auth/auth.model";
 import { Booking } from "../Booking/booking.model";
 import { Driver } from "../Driver/driver.model";
 import httpStatus from "http-status";
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import {
    BookingStatus,
    BookingType,

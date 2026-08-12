@@ -1,7 +1,7 @@
 import express, { type Application } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import { configs } from "@/app/configs";
+import { configs } from "./app/configs";
 import { notFound } from "./app/middlewares";
 import globalErrorHandler from "./app/middlewares/global-error-handler";
 import { allRoutes } from "./app/routes";

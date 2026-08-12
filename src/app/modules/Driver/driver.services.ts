@@ -1,4 +1,4 @@
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import { AuthRole, AuthStatus } from "../Auth/auth.constant";
 import { Auth } from "../Auth/auth.model";
 import type {
@@ -9,18 +9,18 @@ import type {
 } from "./driver.validation";
 import httpStatus from "http-status";
 import type { IAuth, IAuthDoc } from "../Auth/auth.interface";
-import type { TMulterFile } from "@/app/types/multer.types";
-import uploadFileIntoCloudinary from "@/app/utils/upload-file-into-cloudinary";
+import type { TMulterFile } from "../../types/multer.types";
+import uploadFileIntoCloudinary from "../../utils/upload-file-into-cloudinary";
 import mongoose, { Types, type PipelineStage } from "mongoose";
-import { hashPassword } from "@/app/utils/password";
-import { configs } from "@/app/configs";
+import { hashPassword } from "../../utils/password";
+import { configs } from "../../configs";
 import { Driver } from "./driver.model";
-import { deleteFileByUrl } from "@/app/utils/delete-file-from-cloudinary";
+import { deleteFileByUrl } from "../../utils/delete-file-from-cloudinary";
 import { driverSearchAbleFields } from "./driver.constant";
 import {
    driverPasswordChangedTemplate,
    sendEmail,
-} from "@/app/utils/send-email";
+} from "../../utils/send-email";
 import { Booking, BookingStatus } from "../Booking";
 
 // ** Create Driver **

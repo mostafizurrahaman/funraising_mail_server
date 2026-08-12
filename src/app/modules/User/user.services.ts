@@ -8,7 +8,7 @@ import type {
 import { AuthPermission, AuthRole, AuthStatus } from "../Auth/auth.constant";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import httpStatus from "http-status";
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import { Company } from "../Company/company.model";
 
 const getAllUserFromDB = async (query: TGetAllUserQueryType) => {

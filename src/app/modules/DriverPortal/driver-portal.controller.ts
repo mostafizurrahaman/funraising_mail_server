@@ -1,8 +1,8 @@
 import httpStatus from "http-status";
-import { catchAsync } from "@/app/utils/catch-async";
-import { sendResponse } from "@/app/utils/send-response";
+import { catchAsync } from "../../utils/catch-async";
+import { sendResponse } from "../../utils/send-response";
 import { DriverPortalServices } from "./driver-portal.services";
-import { getUserFromRequest } from "@/app/utils";
+import { getUserFromRequest } from "../../utils";
 
 const getAvailableRides = catchAsync(async (req, res) => {
    const result = await DriverPortalServices.getAvailableRides(

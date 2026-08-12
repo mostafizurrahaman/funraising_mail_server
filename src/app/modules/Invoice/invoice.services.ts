@@ -1,4 +1,4 @@
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import type { TCreateInvoicePayload } from "./invoice.validation";
 import httpStatus from "http-status";
@@ -9,8 +9,8 @@ import { Invoice, InvoiceBooking } from "./invoice.model";
 import { Booking, BookingPaymentStatus, BookingStatus } from "../Booking";
 import mongoose, { mongo } from "mongoose";
 import { InvoiceStatus, type TInvoiceStatusType } from "./invoice.constant";
-import { uploadBufferIntoCloudinary } from "@/app/utils/upload-buffer-into-cloudinary";
-import { generateInvoicePDF } from "@/app/utils/pdf-generator";
+import { uploadBufferIntoCloudinary } from "../../utils/upload-buffer-into-cloudinary";
+import { generateInvoicePDF } from "../../utils/pdf-generator";
 const createInvoice = async (
    user: IAuthDoc,
    payload: TCreateInvoicePayload,

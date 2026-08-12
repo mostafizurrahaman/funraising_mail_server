@@ -2,7 +2,7 @@ import {
    GERMANY_PHONE_NUMBER_REGEX,
    sortingOrderValues,
    sortOrder,
-} from "@/app/constants";
+} from "../../constants";
 import {
    enumString,
    optionalDate,
@@ -11,7 +11,7 @@ import {
    optionalString,
    requiredEmail,
    requiredString,
-} from "@/app/utils";
+} from "../../utils";
 import z from "zod";
 import { driverSortableFields } from "./driver.constant";
 import { AuthStatus, AuthStatusValues } from "../Auth/auth.constant";

@@ -1,6 +1,6 @@
 import express from "express";
 import { DriverPortalController } from "./driver-portal.controller";
-import { auth } from "@/app/middlewares/auth";
+import { auth } from "../../middlewares/auth";
 import { AuthRole } from "../Auth/auth.constant";
 
 const router = express.Router();

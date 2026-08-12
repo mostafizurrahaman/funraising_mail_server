@@ -1,4 +1,4 @@
-import type { TMulterFile } from "@/app/types/multer.types";
+import type { TMulterFile } from "../../types/multer.types";
 import { Auth } from "../Auth/auth.model";
 import type {
    TGetAllBookingQuery,
@@ -6,14 +6,14 @@ import type {
    TPayForBookingByID,
    TPrivateBookingPayloadType,
 } from "./booking.validation";
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import httpStatus from "http-status";
 import { AuthRole, AuthStatus } from "../Auth/auth.constant";
 import { Driver } from "../Driver";
 import { generateUniqueBookingNumber, prepareRideDateTime, calculateDistance } from "./booking.utils";
-import { uploadMultipleFilesIntoCloudinary } from "@/app/utils/upload-file-into-cloudinary";
-import { uploadBufferIntoCloudinary } from "@/app/utils/upload-buffer-into-cloudinary";
-import { generateInvoicePDF } from "@/app/utils/pdf-generator";
+import { uploadMultipleFilesIntoCloudinary } from "../../utils/upload-file-into-cloudinary";
+import { uploadBufferIntoCloudinary } from "../../utils/upload-buffer-into-cloudinary";
+import { generateInvoicePDF } from "../../utils/pdf-generator";
 import { Booking, GkvBooking, PrivateBooking } from "./booking.model";
 import {
    BookingPaymentStatus,

@@ -2,10 +2,10 @@ import type {
    FileCategory,
    FileExtension,
    FileValidationConfig,
-} from "@/app/types/multer.types";
+} from "../../types/multer.types";
 import httpStatus from "http-status";
 import { FILE_CATEGORY_MAP } from "./constant";
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 
 export const isFileExtensionAllowed = (
    filename: string,

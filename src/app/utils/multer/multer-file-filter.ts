@@ -2,7 +2,7 @@ import type multer from "multer";
 
 import type { Request } from "express";
 import { isFileExtensionAllowed } from "./filter-by-extension";
-import type { FileValidationConfig } from "@/app/types/multer.types";
+import type { FileValidationConfig } from "../../types/multer.types";
 
 export const multerFileFilter = (config: FileValidationConfig) => {
    return (

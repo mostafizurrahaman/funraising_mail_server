@@ -1,6 +1,6 @@
 import { TrackingState } from "./tracking-state.model";
 import httpStatus from "http-status";
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 
 const getByBookingId = async (bookingId: string) => {
    const state = await TrackingState.findOne({ booking: bookingId });

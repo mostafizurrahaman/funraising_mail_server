@@ -3,7 +3,7 @@
 
 import httpStatus from "http-status";
 import { ZodError } from "zod";
-import { configs } from "@/app/configs";
+import { configs } from "../configs";
 import type { ErrorRequestHandler } from "express";
 import {
    AppError,
@@ -11,7 +11,7 @@ import {
    handleDuplicateError,
    handleValidationError,
    handleZodError,
-} from "@/app/errors";
+} from "../errors";
 import type { IErrorSources } from "../types";
 
 const globalErrorHandler: ErrorRequestHandler = async (err, req, res, next) => {

@@ -1,12 +1,12 @@
 // Owner signup schema :
 
-import { GERMANY_PHONE_NUMBER_REGEX } from "@/app/constants";
+import { GERMANY_PHONE_NUMBER_REGEX } from "../../constants";
 import {
    optionalString,
    positiveNumber,
    requiredEmail,
    requiredString,
-} from "@/app/utils";
+} from "../../utils";
 import z from "zod";
 
 // ?? 1. Signup

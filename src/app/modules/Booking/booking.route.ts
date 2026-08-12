@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { BookingController } from "./booking.controller";
-import { validateRequest } from "@/app/middlewares";
+import { validateRequest } from "../../middlewares";
 import { BookingValidationSchema } from "./booking.validation";
-import { multerFactory } from "@/app/utils/multer";
-import { auth } from "@/app/middlewares/auth";
+import { multerFactory } from "../../utils/multer";
+import { auth } from "../../middlewares/auth";
 import { AuthRole } from "../Auth/auth.constant";
 
 const router = Router();

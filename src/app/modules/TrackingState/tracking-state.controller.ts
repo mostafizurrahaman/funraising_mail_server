@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
-import { catchAsync } from "@/app/utils/catch-async";
-import { sendResponse } from "@/app/utils/send-response";
+import { catchAsync } from "../../utils/catch-async";
+import { sendResponse } from "../../utils/send-response";
 import { TrackingStateServices } from "./tracking-state.services";
 
 const getByBookingId = catchAsync(async (req, res) => {

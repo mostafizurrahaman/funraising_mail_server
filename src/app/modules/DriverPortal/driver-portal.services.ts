@@ -1,7 +1,7 @@
 import { Booking } from "../Booking/booking.model";
 import { Driver } from "../Driver/driver.model";
 import httpStatus from "http-status";
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import { BookingStatus } from "../Booking/booking.constant";
 import { Auth } from "../Auth/auth.model";
 

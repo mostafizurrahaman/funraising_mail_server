@@ -1,4 +1,4 @@
-import { requiredMongooseId } from "@/app/utils";
+import { requiredMongooseId } from "../../utils";
 import z from "zod";
 import { InvoiceStatusValues } from "./invoice.constant";
 

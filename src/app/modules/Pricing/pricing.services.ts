@@ -1,4 +1,4 @@
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import { Pricing } from "./pricing.model";
 import type { TUpdateOrCreatePayload } from "./pricing.validation";

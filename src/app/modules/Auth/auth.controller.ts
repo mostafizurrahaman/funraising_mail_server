@@ -3,7 +3,7 @@ import {
    getUserFromRequest,
    sendResponse,
    setCookie,
-} from "@/app/utils";
+} from "../../utils";
 import httpStatus from "http-status";
 import { AuthServices } from "./auth.services";
 

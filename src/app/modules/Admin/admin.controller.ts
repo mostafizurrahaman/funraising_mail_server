@@ -1,8 +1,8 @@
 import httpStatus from "http-status";
-import { catchAsync } from "@/app/utils/catch-async";
-import { sendResponse } from "@/app/utils/send-response";
+import { catchAsync } from "../../utils/catch-async";
+import { sendResponse } from "../../utils/send-response";
 import { AdminServices } from "./admin.services";
-import { getUserFromRequest } from "@/app/utils";
+import { getUserFromRequest } from "../../utils";
 
 const getAllCompanies = catchAsync(async (req, res) => {
    const result = await AdminServices.getAllCompanies(req.query);

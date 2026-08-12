@@ -1,7 +1,7 @@
 import {
    GERMANY_PHONE_NUMBER_REGEX,
    sortingOrderValues,
-} from "@/app/constants";
+} from "../../constants";
 import {
    enumString,
    optionalDate,
@@ -10,7 +10,7 @@ import {
    optionalString,
    requiredMongooseId,
    requiredString,
-} from "@/app/utils";
+} from "../../utils";
 import z from "zod";
 import {
    BookingPaymentStatusValues,
