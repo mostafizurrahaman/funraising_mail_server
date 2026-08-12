@@ -1,4 +1,4 @@
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import httpStatus from "http-status";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import { Bank } from "./bank.model";
@@ -51,8 +51,20 @@ const getFromDB = async (user: IAuthDoc) => {
    return result;
 };
 
+const getPublicBankByCompanyId = async (companyId: string) => {
+   const result = await Bank.findOne({ user: companyId }).select("bankName accountHolder iban bic -_id");
+   if (!result) {
+      throw new AppError(
+         httpStatus.NOT_FOUND,
+         "Bank details not found for this company.",
+      );
+   }
+   return result;
+};
+
 export const BankServices = {
    createIntoDB,
    updateInDB,
    getFromDB,
+   getPublicBankByCompanyId,
 };

@@ -1,7 +1,7 @@
 import {
    GERMANY_PHONE_NUMBER_REGEX,
    sortingOrderValues,
-} from "@/app/constants";
+} from "../../constants";
 import {
    enumString,
    optionalDate,
@@ -10,7 +10,7 @@ import {
    optionalString,
    requiredMongooseId,
    requiredString,
-} from "@/app/utils";
+} from "../../utils";
 import z from "zod";
 import {
    BookingPaymentStatusValues,
@@ -131,6 +131,7 @@ const getAllBookingFromDB = z.object({
       searchTerm: optionalString("search term"),
       bookingStatus: optionalEnumString(BookingStatusValues, "Booking Status"),
       bookingNumber: optionalString("Booking number"),
+      bookingId: requiredMongooseId("Booking ID").optional(),
       paymentStatus: optionalEnumString(
          BookingPaymentStatusValues,
          "Payment Status",

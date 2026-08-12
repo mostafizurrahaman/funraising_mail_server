@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { catchAsync, getUserFromRequest, sendResponse } from "@/app/utils";
+import { catchAsync, getUserFromRequest, sendResponse } from "../../utils";
 import { BookingServices } from "./booking.services";
 import type {
    TAssignDriverByCompanyPayloadType,
@@ -8,7 +8,7 @@ import type {
    TPrivateBookingPayloadType,
    TVerifyPayment,
 } from "./booking.validation";
-import type { TMulterFile } from "@/app/types/multer.types";
+import type { TMulterFile } from "../../types/multer.types";
 
 const createGkbBooking = catchAsync(async (req, res) => {
    console.log(req.files);
@@ -156,6 +156,18 @@ const startBooking = catchAsync(async (req, res) => {
       data: result,
    });
 });
+const getBookingByIdPublic = catchAsync(async (req, res) => {
+   const bookingId = req.params.id as string;
+   const result = await BookingServices.getBookingByIdPublic(bookingId);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Booking retrieved successfully.",
+      data: result,
+   });
+});
+
 export const BookingController = {
    createGkbBooking,
    createPrivateBooking,
@@ -167,4 +179,5 @@ export const BookingController = {
    rejectTheAssignment,
    startBooking,
    cashReceivedForBooking,
+   getBookingByIdPublic,
 };

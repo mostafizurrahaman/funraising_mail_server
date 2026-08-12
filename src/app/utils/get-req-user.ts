@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Request } from "express";
 import type { IJwtUserPayload } from "../types/jwt.types";
-import httpStatus from 'http-status'
+import httpStatus from "http-status";
 import { AppError } from "../errors";
 
 export const getUserFromRequest = (req: Request) => {

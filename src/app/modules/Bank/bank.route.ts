@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { BankController } from "./bank.controller";
-import { auth } from "@/app/middlewares/auth";
-import { validateRequest } from "@/app/middlewares";
+import { auth } from "../../middlewares/auth";
+import { validateRequest } from "../../middlewares";
 import { BankValidationSchema } from "./bank.validation";
 import { AuthRole } from "../Auth/auth.constant";
 
@@ -25,5 +25,8 @@ router.patch(
 
 // Get my bank details
 router.get("/me", auth(AuthRole.COMPANY), BankController.getMyBank);
+
+// Get public bank details by company ID
+router.get("/company/:companyId", BankController.getPublicBankByCompanyId);
 
 export const BankRoutes = router;

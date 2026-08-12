@@ -1,14 +1,12 @@
 // Owner signup schema :
 
-import { GERMANY_PHONE_NUMBER_REGEX } from "@/app/constants";
-// @ts-ignore
-import { validationLatitudeLongitude } from "validation-latitude-longitude";
+import { GERMANY_PHONE_NUMBER_REGEX } from "../../constants";
 import {
    optionalString,
    positiveNumber,
    requiredEmail,
    requiredString,
-} from "@/app/utils";
+} from "../../utils";
 import z from "zod";
 
 // ?? 1. Signup
@@ -53,42 +51,9 @@ const signupSchema = z.object({
                },
             })
             .positive("Radius must be greater than 0 km."),
+         postalCode: requiredString("Postal code"),
          fleetSize: positiveNumber("Fleet size"),
          note: optionalString("Note"),
-      })
-      .superRefine((data, ctx) => {
-         if (
-            data.latitude &&
-            !validationLatitudeLongitude.latitude(data.latitude)
-         ) {
-            return ctx.addIssue({
-               code: "custom",
-               message: "Provide a valid service area.",
-               path: ["address"],
-            });
-         }
-
-         if (
-            data.latitude &&
-            !validationLatitudeLongitude.longitude(data.longitude)
-         ) {
-            return ctx.addIssue({
-               code: "custom",
-               message: "Provide a valid service area.",
-               path: ["address"],
-            });
-         }
-
-         if (
-            data.latitude &&
-            !validationLatitudeLongitude.latLong(data.latitude, data.longitude)
-         ) {
-            return ctx.addIssue({
-               code: "custom",
-               message: "Provide a valid service area.",
-               path: ["address"],
-            });
-         }
       }),
 });
 

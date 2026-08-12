@@ -1,19 +1,19 @@
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import { Auth } from "./auth.model";
 import type { TLoginPayload, TSignupPayload } from "./auth.validation";
 import httpStatus, { status } from "http-status";
 import { AuthPermission, AuthRole, AuthStatus } from "./auth.constant";
-import { comparePassword, hashPassword } from "@/app/utils/password";
-import { configs } from "@/app/configs";
-import type { TMulterFile } from "@/app/types/multer.types";
-import uploadFileIntoCloudinary from "@/app/utils/upload-file-into-cloudinary";
+import { comparePassword, hashPassword } from "../../utils/password";
+import { configs } from "../../configs";
+import type { TMulterFile } from "../../types/multer.types";
+import uploadFileIntoCloudinary from "../../utils/upload-file-into-cloudinary";
 import mongoose, { Types, type PipelineStage } from "mongoose";
 import { Company } from "../Company/company.model";
 import { generateUniqueCompanyCode } from "../Company/company.utils";
 import { geoLocationType } from "../Company/company.constants";
-import { deleteFileByUrl } from "@/app/utils/delete-file-from-cloudinary";
-import type { IJwtUserPayload } from "@/app/types";
-import { createToken } from "@/app/utils";
+import { deleteFileByUrl } from "../../utils/delete-file-from-cloudinary";
+import type { IJwtUserPayload } from "../../types";
+import { createToken } from "../../utils";
 import type { IAuthDoc } from "./auth.interface";
 
 // ? Organization Signup
@@ -33,6 +33,7 @@ const signupIntoDB = async (
       latitude,
       longitude,
       radiusKm,
+      postalCode,
       note,
    } = payload;
 
@@ -154,6 +155,7 @@ const signupIntoDB = async (
                   coordinates: [longitude, latitude],
                },
                radiusKm,
+               postalCode,
                note,
             },
          ],

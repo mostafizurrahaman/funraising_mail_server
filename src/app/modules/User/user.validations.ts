@@ -5,7 +5,7 @@ import {
    optionalNumber,
    optionalString,
    requiredString,
-} from "@/app/utils";
+} from "../../utils";
 import z from "zod";
 import {
    AuthRoleValues,
@@ -13,7 +13,7 @@ import {
    AuthStatusValues,
    sortableFields,
 } from "../Auth/auth.constant";
-import { sortingOrderValues } from "@/app/constants";
+import { sortingOrderValues } from "../../constants";
 
 const getAllUserSchema = z.object({
    query: z.object({
@@ -24,6 +24,7 @@ const getAllUserSchema = z.object({
       role: optionalEnumString(AuthRoleValues, "Role"),
       sortBy: optionalEnumString(sortableFields, "Sort by"),
       sortOrder: optionalEnumString(sortingOrderValues, "Sort order"),
+      postalCode: optionalDate("Postal code"),
       fromDate: optionalDate("From date"),
       toDate: optionalDate("To date"),
    }),

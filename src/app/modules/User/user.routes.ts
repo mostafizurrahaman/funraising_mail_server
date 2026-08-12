@@ -1,8 +1,8 @@
 import express, { Router } from "express";
 import { AuthRole } from "../Auth/auth.constant";
-import { auth } from "@/app/middlewares/auth";
+import { auth } from "../../middlewares/auth";
 
-import { validateRequest } from "@/app/middlewares";
+import { validateRequest } from "../../middlewares";
 import { UserValidations } from "./user.validations";
 import { userController } from "./user.controllers";
 
@@ -10,7 +10,7 @@ const router: Router = express.Router();
 
 router.get(
    "/all",
-   auth(AuthRole.ADMIN, AuthRole.SUPER_ADMIN),
+   // auth(AuthRole.ADMIN, AuthRole.SUPER_ADMIN),
    validateRequest(UserValidations.getAllUserSchema),
    userController.getAllUser,
 );

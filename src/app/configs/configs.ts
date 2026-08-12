@@ -103,9 +103,11 @@ const envs: TConfigType = {
 };
 
 const validateEnv = () => {
-   const { error, data } = z.safeParse(envValidationSchema, envs);
+   const { error, data } = envValidationSchema.safeParse(envs);
 
-   console.log("ZOD ERRORS", error);
+   if (error) {
+       console.log("ZOD ERRORS", error.format());
+   }
 
    return data as TConfigType;
 };

@@ -3,7 +3,7 @@ import {
    optionalEnumString,
    optionalString,
    requiredString,
-} from "@/app/utils";
+} from "../../utils";
 import z from "zod";
 import { CountryValues, CurrencyValues } from "./bank.constant";
 

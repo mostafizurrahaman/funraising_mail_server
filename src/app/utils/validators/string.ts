@@ -1,5 +1,5 @@
 import { z, ZodIssueCode } from "zod";
-import { URL_REGEX } from "@/app/constants";
+import { URL_REGEX } from "../../constants";
 import mongoose from "mongoose";
 
 /**

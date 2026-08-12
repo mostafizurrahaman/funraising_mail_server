@@ -2,7 +2,7 @@ import moment from "moment";
 import httpStatus from "http-status";
 import { customAlphabet } from "nanoid";
 
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import { Booking } from "./booking.model";
 
 const nano = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 8);

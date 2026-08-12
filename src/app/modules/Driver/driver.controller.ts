@@ -1,7 +1,7 @@
 import httpStatus from "http-status";
-import { catchAsync, getUserFromRequest, sendResponse } from "@/app/utils";
+import { catchAsync, getUserFromRequest, sendResponse } from "../../utils";
 import { DriverServices } from "./driver.services";
-import type { TMulterFile } from "@/app/types/multer.types";
+import type { TMulterFile } from "../../types/multer.types";
 import type { TGetAllDriverQuery } from "./driver.validation";
 
 const createDriver = catchAsync(async (req, res) => {

@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { SurchargeController } from "./surcharge.controller";
-import { auth } from "@/app/middlewares/auth";
+import { auth } from "../../middlewares/auth";
 import { AuthRole } from "../Auth/auth.constant";
-import { validateRequest } from "@/app/middlewares";
+import { validateRequest } from "../../middlewares";
 import { SurchargeValidationSchema } from "./surcharge.validation";
 
 const router = Router();

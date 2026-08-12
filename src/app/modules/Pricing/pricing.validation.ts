@@ -1,4 +1,4 @@
-import { positiveNumber } from "@/app/utils";
+import { positiveNumber } from "../../utils";
 import z from "zod";
 
 const updateOrCreateSchema = z.object({

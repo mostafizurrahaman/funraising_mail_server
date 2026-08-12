@@ -1,11 +1,11 @@
-import { multerFactory } from "@/app/utils/multer";
+import { multerFactory } from "../../utils/multer";
 import express from "express";
 import { AuthController } from "./auth.controller";
-import { validateRequest } from "@/app/middlewares";
+import { validateRequest } from "../../middlewares";
 import { AuthValidationSchema } from "./auth.validation";
 import { Auth } from "./auth.model";
 import { AuthRole } from "./auth.constant";
-import { auth } from "@/app/middlewares/auth";
+import { auth } from "../../middlewares/auth";
 
 const router = express.Router();
 
@@ -41,5 +41,8 @@ router.post(
 
 // ? Get Profile:
 router.get("/me", auth(), AuthController.getMe);
+
+// ? Logout:
+router.post("/logout", AuthController.logout);
 
 export const authRoutes = router;

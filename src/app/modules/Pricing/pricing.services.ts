@@ -1,4 +1,4 @@
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import { Pricing } from "./pricing.model";
 import type { TUpdateOrCreatePayload } from "./pricing.validation";
@@ -47,7 +47,23 @@ const getPricingForCompany = async (user: IAuthDoc) => {
    return existingPricing;
 };
 
+const getPublicPricingByCompanyId = async (companyId: string) => {
+   const existingPricing = await Pricing.findOne({
+      user: companyId,
+   }).select("baseFare perKm -_id");
+
+   if (!existingPricing) {
+      throw new AppError(
+         httpStatus.NOT_FOUND,
+         "Pricing not found for this company.",
+      );
+   }
+
+   return existingPricing;
+};
+
 export const PricingServices = {
    updateAndCreatePricing,
    getPricingForCompany,
+   getPublicPricingByCompanyId,
 };

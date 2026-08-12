@@ -1,4 +1,4 @@
-import type { TMulterFile } from "@/app/types/multer.types";
+import type { TMulterFile } from "../../types/multer.types";
 import { Auth } from "../Auth/auth.model";
 import type {
    TGetAllBookingQuery,
@@ -6,16 +6,14 @@ import type {
    TPayForBookingByID,
    TPrivateBookingPayloadType,
 } from "./booking.validation";
-import { AppError } from "@/app/errors";
+import { AppError } from "../../errors";
 import httpStatus from "http-status";
 import { AuthRole, AuthStatus } from "../Auth/auth.constant";
 import { Driver } from "../Driver";
-import {
-   calculateDistance,
-   generateUniqueBookingNumber,
-   prepareRideDateTime,
-} from "./booking.utils";
-import { uploadMultipleFilesIntoCloudinary } from "@/app/utils/upload-file-into-cloudinary";
+import { generateUniqueBookingNumber, prepareRideDateTime, calculateDistance } from "./booking.utils";
+import { uploadMultipleFilesIntoCloudinary } from "../../utils/upload-file-into-cloudinary";
+import { uploadBufferIntoCloudinary } from "../../utils/upload-buffer-into-cloudinary";
+import { generateInvoicePDF } from "../../utils/pdf-generator";
 import { Booking, GkvBooking, PrivateBooking } from "./booking.model";
 import {
    BookingPaymentStatus,
@@ -29,6 +27,7 @@ import mongoose, { Types, type PipelineStage } from "mongoose";
 import type { IAuthDoc } from "../Auth/auth.interface";
 import { Transaction, TransactionStatus } from "../Transaction";
 import { TrackingState } from "../TrackingState";
+import { getIO } from "../../configs/socket";
 
 const createGkbBooking = async (
    payload: TGkvBookingPayloadType,
@@ -170,6 +169,43 @@ const createGkbBooking = async (
       prescriptionAttached: fileUrls?.length > 0,
       prescriptionFiles: fileUrls,
    });
+
+   // Emit socket event to the company room
+   try {
+      getIO()
+         .to(`company_room_${company?._id}`)
+         .emit("new_booking", gkvBooking);
+   } catch (error) {
+      console.error("Socket error on new GKV booking:", error);
+   }
+
+   // Generate and upload PDF Invoice
+   try {
+      const invoiceData = {
+         invoiceNumber: `INV-${bookingNumber}`,
+         date: new Date(),
+         companyName: company.name,
+         customerName: patientName,
+         customerPhone: phone,
+         pickupAddress,
+         destinationAddress,
+         items: [
+            { label: "Platform Fee", amount: 2 },
+            { label: "Estimated Distance", amount: distance },
+         ],
+         totalAmount: 2, // Only platform fee is charged for GKV
+      };
+      
+      const pdfBuffer = await generateInvoicePDF(invoiceData);
+      const invoiceResult = await uploadBufferIntoCloudinary(pdfBuffer, "invoices", `invoice-${bookingNumber}`);
+      
+      if (invoiceResult?.secure_url) {
+         gkvBooking.invoiceUrl = invoiceResult.secure_url;
+         await gkvBooking.save();
+      }
+   } catch (error) {
+      console.error("Failed to generate/upload GKV booking invoice:", error);
+   }
 
    return gkvBooking;
 };
@@ -358,6 +394,49 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
       paymentStatus: BookingPaymentStatus.PENDING,
    });
 
+   // Emit socket event to the company room
+   try {
+      getIO()
+         .to(`company_room_${company?._id}`)
+         .emit("new_booking", privateBooking);
+   } catch (error) {
+      console.error("Socket error on new private booking:", error);
+   }
+
+   // Generate and upload PDF Invoice
+   try {
+      const items = [
+         { label: "Base Fare", amount: Math.max(Number(basePricing.baseFare), 0) },
+         { label: `Distance (${distance} km)`, amount: distancePricePerKm },
+      ];
+      
+      surcharges.forEach(surcharge => {
+         items.push({ label: surcharge.label, amount: surcharge.amount });
+      });
+
+      const invoiceData = {
+         invoiceNumber: `INV-${bookingNumber}`,
+         date: new Date(),
+         companyName: company.name,
+         customerName: patientName,
+         customerPhone: phone,
+         pickupAddress,
+         destinationAddress,
+         items,
+         totalAmount: estimatedFixedPrice,
+      };
+      
+      const pdfBuffer = await generateInvoicePDF(invoiceData);
+      const invoiceResult = await uploadBufferIntoCloudinary(pdfBuffer, "invoices", `invoice-${bookingNumber}`);
+      
+      if (invoiceResult?.secure_url) {
+         privateBooking.invoiceUrl = invoiceResult.secure_url;
+         await privateBooking.save();
+      }
+   } catch (error) {
+      console.error("Failed to generate/upload Private booking invoice:", error);
+   }
+
    return privateBooking;
 };
 
@@ -376,6 +455,7 @@ const getBookingsFromDB = async (query: TGetAllBookingQuery) => {
       sortBy,
       sortOrder,
       searchTerm,
+      bookingId,
    } = query;
 
    const page = Math.max(Number(currentPage), 1);
@@ -391,7 +471,7 @@ const getBookingsFromDB = async (query: TGetAllBookingQuery) => {
    if (paymentStatus) matchConditions.paymentStatus = paymentStatus;
    if (bookingNumber) matchConditions.bookingNumber = bookingNumber;
    if (bookingType) matchConditions.bookingType = bookingType;
-   if (bookingType) matchConditions.bookingType = bookingType;
+   if (bookingId) matchConditions._id = new Types.ObjectId(bookingId);
 
    if (assignedDriverId) {
       matchConditions.assignedDriver = new Types.ObjectId(assignedDriverId);
@@ -657,6 +737,15 @@ const assignDriverByCompany = async (
 
    await booking.save();
 
+   // Notify the driver in real-time
+   try {
+      getIO()
+         .to(`user_room_${driverUser._id}`)
+         .emit("driver_assigned", booking);
+   } catch (error) {
+      console.error("Socket error on driver assignment:", error);
+   }
+
    return booking;
 };
 
@@ -696,6 +785,15 @@ const assignBookingToSelf = async (driverUser: IAuthDoc, bookingId: string) => {
    booking.bookingStatus = BookingStatus.ASSIGNED;
 
    await booking.save();
+
+   // Notify the driver in real-time (if needed, though they assigned it themselves)
+   try {
+      getIO()
+         .to(`user_room_${driverUser._id}`)
+         .emit("driver_assigned", booking);
+   } catch (error) {
+      console.error("Socket error on self assignment:", error);
+   }
 
    return booking;
 };
@@ -741,6 +839,15 @@ const rejectAssignment = async (driverUser: IAuthDoc, bookingId: string) => {
    booking.bookingStatus = BookingStatus.NEW;
 
    await booking.save();
+
+   // Notify the company in real-time that driver rejected
+   try {
+      getIO()
+         .to(`company_room_${booking.company}`)
+         .emit("booking_rejected", booking);
+   } catch (error) {
+      console.error("Socket error on booking rejection:", error);
+   }
 
    return booking;
 };
@@ -1155,6 +1262,19 @@ const startBookingByDriver = async (
       );
    }
 
+   // 2.5 Check if the current date is before the ride date
+   const today = new Date();
+   today.setUTCHours(0, 0, 0, 0);
+   const scheduledDate = new Date(booking.rideDate);
+   scheduledDate.setUTCHours(0, 0, 0, 0);
+
+   if (today.getTime() < scheduledDate.getTime()) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "You cannot start the ride before the scheduled ride date.",
+      );
+   }
+
    if (booking.bookingType === "private") {
       const privateBooking = await PrivateBooking.findOne({
          _id: booking?._id,
@@ -1230,6 +1350,14 @@ const startBookingByDriver = async (
    }
 };
 
+const getBookingByIdPublic = async (bookingId: string) => {
+   const booking = await Booking.findById(bookingId).lean();
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
+   }
+   return booking;
+};
+
 export const BookingServices = {
    createGkbBooking,
    createPrivateBooking,
@@ -1241,4 +1369,5 @@ export const BookingServices = {
    rejectAssignment,
    cashReceiveForBookingByID,
    startBookingByDriver,
+   getBookingByIdPublic,
 };

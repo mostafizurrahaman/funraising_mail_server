@@ -46,6 +46,7 @@ export interface IBooking {
 
    // Booking Status:
    bookingStatus: TBookingStatusType;
+   completedAt: Date;
 }
 
 export interface IGkvBooking {

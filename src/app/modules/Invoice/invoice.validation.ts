@@ -1,5 +1,6 @@
-import { requiredMongooseId } from "@/app/utils";
+import { requiredMongooseId } from "../../utils";
 import z from "zod";
+import { InvoiceStatusValues } from "./invoice.constant";
 
 export const monthYearSchema = z
    .string()
@@ -14,8 +15,16 @@ const createSchema = z.object({
    }),
 });
 
+const updateStatusSchema = z.object({
+   body: z.object({
+      status: z.enum(InvoiceStatusValues as [string, ...string[]]),
+   }),
+});
+
 export const InvoiceValidationSchema = {
    createSchema,
+   updateStatusSchema,
 };
 
 export type TCreateInvoicePayload = z.infer<typeof createSchema.shape.body>;
+export type TUpdateInvoiceStatusPayload = z.infer<typeof updateStatusSchema.shape.body>;

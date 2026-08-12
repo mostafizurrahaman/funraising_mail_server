@@ -54,6 +54,10 @@ const companySchema = new Schema<ICompanyDoc>(
          required: true,
          min: 1,
       },
+      postalCode: {
+         type: String,
+         required: true,
+      },
       fleetSize: {
          type: Number,
          required: true,
