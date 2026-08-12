@@ -1,8 +1,6 @@
 // Owner signup schema :
 
 import { GERMANY_PHONE_NUMBER_REGEX } from "@/app/constants";
-// @ts-ignore
-import { validationLatitudeLongitude } from "validation-latitude-longitude";
 import {
    optionalString,
    positiveNumber,
@@ -56,40 +54,6 @@ const signupSchema = z.object({
          postalCode: requiredString("Postal code"),
          fleetSize: positiveNumber("Fleet size"),
          note: optionalString("Note"),
-      })
-      .superRefine((data, ctx) => {
-         if (
-            data.latitude &&
-            !validationLatitudeLongitude.latitude(data.latitude)
-         ) {
-            return ctx.addIssue({
-               code: "custom",
-               message: "Provide a valid service area.",
-               path: ["address"],
-            });
-         }
-
-         if (
-            data.latitude &&
-            !validationLatitudeLongitude.longitude(data.longitude)
-         ) {
-            return ctx.addIssue({
-               code: "custom",
-               message: "Provide a valid service area.",
-               path: ["address"],
-            });
-         }
-
-         if (
-            data.latitude &&
-            !validationLatitudeLongitude.latLong(data.latitude, data.longitude)
-         ) {
-            return ctx.addIssue({
-               code: "custom",
-               message: "Provide a valid service area.",
-               path: ["address"],
-            });
-         }
       }),
 });
 
