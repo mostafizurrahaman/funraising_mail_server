@@ -10,12 +10,10 @@ import { AppError } from "@/app/errors";
 import httpStatus from "http-status";
 import { AuthRole, AuthStatus } from "../Auth/auth.constant";
 import { Driver } from "../Driver";
-import {
-   calculateDistance,
-   generateUniqueBookingNumber,
-   prepareRideDateTime,
-} from "./booking.utils";
+import { generateUniqueBookingNumber, prepareRideDateTime, calculateDistance } from "./booking.utils";
 import { uploadMultipleFilesIntoCloudinary } from "@/app/utils/upload-file-into-cloudinary";
+import { uploadBufferIntoCloudinary } from "@/app/utils/upload-buffer-into-cloudinary";
+import { generateInvoicePDF } from "@/app/utils/pdf-generator";
 import { Booking, GkvBooking, PrivateBooking } from "./booking.model";
 import {
    BookingPaymentStatus,
@@ -179,6 +177,34 @@ const createGkbBooking = async (
          .emit("new_booking", gkvBooking);
    } catch (error) {
       console.error("Socket error on new GKV booking:", error);
+   }
+
+   // Generate and upload PDF Invoice
+   try {
+      const invoiceData = {
+         invoiceNumber: `INV-${bookingNumber}`,
+         date: new Date(),
+         companyName: company.name,
+         customerName: patientName,
+         customerPhone: phone,
+         pickupAddress,
+         destinationAddress,
+         items: [
+            { label: "Platform Fee", amount: 2 },
+            { label: "Estimated Distance", amount: distance },
+         ],
+         totalAmount: 2, // Only platform fee is charged for GKV
+      };
+      
+      const pdfBuffer = await generateInvoicePDF(invoiceData);
+      const invoiceResult = await uploadBufferIntoCloudinary(pdfBuffer, "invoices", `invoice-${bookingNumber}`);
+      
+      if (invoiceResult?.secure_url) {
+         gkvBooking.invoiceUrl = invoiceResult.secure_url;
+         await gkvBooking.save();
+      }
+   } catch (error) {
+      console.error("Failed to generate/upload GKV booking invoice:", error);
    }
 
    return gkvBooking;
@@ -375,6 +401,40 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
          .emit("new_booking", privateBooking);
    } catch (error) {
       console.error("Socket error on new private booking:", error);
+   }
+
+   // Generate and upload PDF Invoice
+   try {
+      const items = [
+         { label: "Base Fare", amount: Math.max(Number(basePricing.baseFare), 0) },
+         { label: `Distance (${distance} km)`, amount: distancePricePerKm },
+      ];
+      
+      surcharges.forEach(surcharge => {
+         items.push({ label: surcharge.label, amount: surcharge.amount });
+      });
+
+      const invoiceData = {
+         invoiceNumber: `INV-${bookingNumber}`,
+         date: new Date(),
+         companyName: company.name,
+         customerName: patientName,
+         customerPhone: phone,
+         pickupAddress,
+         destinationAddress,
+         items,
+         totalAmount: estimatedFixedPrice,
+      };
+      
+      const pdfBuffer = await generateInvoicePDF(invoiceData);
+      const invoiceResult = await uploadBufferIntoCloudinary(pdfBuffer, "invoices", `invoice-${bookingNumber}`);
+      
+      if (invoiceResult?.secure_url) {
+         privateBooking.invoiceUrl = invoiceResult.secure_url;
+         await privateBooking.save();
+      }
+   } catch (error) {
+      console.error("Failed to generate/upload Private booking invoice:", error);
    }
 
    return privateBooking;
@@ -1202,6 +1262,19 @@ const startBookingByDriver = async (
       );
    }
 
+   // 2.5 Check if the current date is before the ride date
+   const today = new Date();
+   today.setUTCHours(0, 0, 0, 0);
+   const scheduledDate = new Date(booking.rideDate);
+   scheduledDate.setUTCHours(0, 0, 0, 0);
+
+   if (today.getTime() < scheduledDate.getTime()) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "You cannot start the ride before the scheduled ride date.",
+      );
+   }
+
    if (booking.bookingType === "private") {
       const privateBooking = await PrivateBooking.findOne({
          _id: booking?._id,
@@ -1277,6 +1350,14 @@ const startBookingByDriver = async (
    }
 };
 
+const getBookingByIdPublic = async (bookingId: string) => {
+   const booking = await Booking.findById(bookingId).lean();
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
+   }
+   return booking;
+};
+
 export const BookingServices = {
    createGkbBooking,
    createPrivateBooking,
@@ -1288,4 +1369,5 @@ export const BookingServices = {
    rejectAssignment,
    cashReceiveForBookingByID,
    startBookingByDriver,
+   getBookingByIdPublic,
 };

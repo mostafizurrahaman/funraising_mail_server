@@ -100,10 +100,28 @@ const getMe = catchAsync(async (req, res) => {
    });
 });
 
+// ?? Logout
+const logout = catchAsync(async (req, res) => {
+   res.clearCookie("refreshToken", {
+      httpOnly: false,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+   });
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Logged out successfully!",
+      data: null,
+   });
+});
+
 export const AuthController = {
    signUp,
    organizationLogin,
    adminLogin,
    driverLogin,
-   getMe
+   getMe,
+   logout
 };

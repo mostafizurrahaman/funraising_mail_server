@@ -42,4 +42,7 @@ router.post(
 // ? Get Profile:
 router.get("/me", auth(), AuthController.getMe);
 
+// ? Logout:
+router.post("/logout", AuthController.logout);
+
 export const authRoutes = router;

@@ -126,6 +126,9 @@ const bookingSchema = new Schema<IBookingDoc>(
          required: true,
          default: BookingStatus.NEW,
       },
+      completedAt: {
+         type: Date,
+      },
    },
    {
       discriminatorKey: "bookingType",

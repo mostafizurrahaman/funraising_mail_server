@@ -156,6 +156,18 @@ const startBooking = catchAsync(async (req, res) => {
       data: result,
    });
 });
+const getBookingByIdPublic = catchAsync(async (req, res) => {
+   const bookingId = req.params.id as string;
+   const result = await BookingServices.getBookingByIdPublic(bookingId);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Booking retrieved successfully.",
+      data: result,
+   });
+});
+
 export const BookingController = {
    createGkbBooking,
    createPrivateBooking,
@@ -167,4 +179,5 @@ export const BookingController = {
    rejectTheAssignment,
    startBooking,
    cashReceivedForBooking,
+   getBookingByIdPublic,
 };

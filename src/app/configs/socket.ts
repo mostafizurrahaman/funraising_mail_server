@@ -121,19 +121,19 @@ export const initSocket = (httpServer: HTTPServer) => {
       }
    });
 
-      // 2. Setup WebSocket Event Listeners
-      io.on("connection", (socket: Socket) => {
-         const user = (socket as any).user;
-         console.log(
-            `🔌 Connected: ${user.name} (${user.role}) | Socket ID: ${socket.id}`,
-         );
+   // 2. Setup WebSocket Event Listeners
+   io.on("connection", (socket: Socket) => {
+      const user = (socket as any).user;
+      console.log(
+         `🔌 Connected: ${user.name} (${user.role}) | Socket ID: ${socket.id}`,
+      );
 
-         // Join a personal room for direct events (e.g. driver assignments)
-         socket.join(`user_room_${user._id}`);
-         // Join a company room if applicable
-         if (user.role === AuthRole.COMPANY) {
-            socket.join(`company_room_${user._id}`);
-         }
+      // Join a personal room for direct events (e.g. driver assignments)
+      socket.join(`user_room_${user._id}`);
+      // Join a company room if applicable
+      if (user.role === AuthRole.COMPANY) {
+         socket.join(`company_room_${user._id}`);
+      }
 
       // A. Join a Booking Room (Accessible by Passenger, Driver, and Company Admin)
       socket.on("join-booking-room", (data: { bookingId: string }) => {
@@ -308,6 +308,7 @@ export const initSocket = (httpServer: HTTPServer) => {
                   // Auto-complete the ride when driver is within 100m of destination
                   if (isArrived) {
                      booking.bookingStatus = BookingStatus.COMPLETED;
+                     booking.completedAt = new Date();
                      await booking.save({ session });
 
                      // Notify room that the ride is completed

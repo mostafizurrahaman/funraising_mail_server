@@ -30,6 +30,11 @@ router.get(
    BookingController.getAllBookings,
 );
 
+router.get(
+   "/public/:id",
+   BookingController.getBookingByIdPublic,
+);
+
 router.post(
    "/:id/pay",
    validateRequest(BookingValidationSchema.payForPrivateBooking),
