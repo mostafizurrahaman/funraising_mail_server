@@ -4,7 +4,7 @@
    "private": true,
    "scripts": {
       "prod:dev": "tsx --watch ./src/server.ts",
-      "start": "node ./dist/server.js",
+      "prod:start": "node ./dist/server.js",
       "build": "tsc && tsc-alias"
    },
    "devDependencies": {
