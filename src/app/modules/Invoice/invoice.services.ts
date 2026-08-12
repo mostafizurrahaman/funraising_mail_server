@@ -108,7 +108,7 @@ const createInvoice = async (
       },
    });
 
-   if (newBookings?.length <= 0) {
+if (newBookings?.length <= 0) {
       throw new AppError(
          httpStatus.NOT_FOUND,
          "No New Bookings found for invoice!",
