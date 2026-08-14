@@ -4,11 +4,8 @@
       "lib": ["ESNext"],
       "target": "ESNext",
       "module": "CommonJS",
-      "moduleResolution": "Node",
       "jsx": "react-jsx",
       "allowJs": true,
-      "types": ["bun"],
-      "baseUrl": ".",
       "rootDir": "./src",
       "outDir": "./dist",
       "paths": {
