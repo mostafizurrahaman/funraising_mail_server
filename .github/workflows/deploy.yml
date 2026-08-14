@@ -34,7 +34,7 @@ jobs:
          - name: Install pnpm
            run: npm install -g pnpm
          - name: Install Dependencies
-           run: pnpm install
+           run: npm run build
          - name: COPY FILE VIA SCP
            uses: appleboy/scp-action@v1
            with:
