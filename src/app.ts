@@ -13,9 +13,6 @@ import { allRoutes } from "./app/routes";
 
 const app: Application = express();
 
-// Middlewares
-app.use(express.json());
-app.use(cookieParser());
 app.use(
    cors({
       origin: [
@@ -23,8 +20,13 @@ app.use(
          "https://mediride-booking-fe.vercel.app",
       ],
       credentials: true,
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
    }),
 );
+// Middlewares
+app.use(express.json());
+app.use(cookieParser());
 
 // Entry route of the server:
 app.get("/", (req, res) => {
