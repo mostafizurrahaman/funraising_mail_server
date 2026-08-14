@@ -18,7 +18,8 @@ const signUp = catchAsync(async (req, res) => {
    sendResponse(res, {
       success: true,
       statusCode: httpStatus.CREATED,
-      message: "Account created successfully!",
+      message:
+         "Account created successfully. Please check your email to verify your account.",
       data: result,
    });
 });
@@ -162,5 +163,5 @@ export const AuthController = {
    getMe,
    logout,
    verifyEmail,
-   resendVerificationEmail
+   resendVerificationEmail,
 };
