@@ -33,6 +33,8 @@ jobs:
               node-version: "24.16.0"
          - name: Install BUN
            run: npm install -g bun
+         - name: Install packages
+           run: bun install
          - name: Install Dependencies
            run: bun run build
          - name: COPY FILE VIA SCP
