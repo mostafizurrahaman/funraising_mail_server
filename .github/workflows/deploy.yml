@@ -31,10 +31,10 @@ jobs:
            uses: actions/setup-node@v6
            with:
               node-version: "24.16.0"
-         - name: Install pnpm
-           run: npm install -g pnpm
+         - name: Install BUN
+           run: npm install -g bun
          - name: Install Dependencies
-           run: npm run build
+           run: bun run build
          - name: COPY FILE VIA SCP
            uses: appleboy/scp-action@v1
            with:
@@ -59,6 +59,7 @@ jobs:
 
                  node -v
                  npm -v
+                 bun -v
                  pm2 -v
 
                  cd ${{ secrets.PROJECT_FOLDER }}
@@ -67,5 +68,6 @@ jobs:
                  echo '${{ secrets.ENV_FILE }}' > .env
 
                  export CI=true
-                 npm ci
+                 bun install
+                 bun run build
                  pm2 restart ecosystem.config.js
