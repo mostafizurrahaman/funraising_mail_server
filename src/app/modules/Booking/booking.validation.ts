@@ -33,6 +33,7 @@ const baseBookingValidation = {
       message: "Phone number should be valid german number.",
    }),
    pickupAddress: requiredString("Pickup Address"),
+   pickupPostalCode: optionalString("Pickup Postal Code"),
    pickupLongitude: z.coerce
       .number({ error: "Pickup longitude is required" })
       .min(-180, "Longitude must be between -180 and 180")
@@ -42,6 +43,7 @@ const baseBookingValidation = {
       .min(-90, "Latitude must be between -90 and 90")
       .max(90, "Latitude must be between -90 and 90"),
    destinationAddress: requiredString("Destination Address"),
+   destinationPostalCode: optionalString("Destination Postal Code"),
    destinationLongitude: z.coerce
       .number({ error: "Destination longitude is required" })
       .min(-180, "Longitude must be between -180 and 180")
