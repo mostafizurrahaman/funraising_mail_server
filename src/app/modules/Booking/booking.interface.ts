@@ -18,10 +18,12 @@ export interface IBooking {
 
    // Pickup  Address:
    pickupAddress: string;
+   pickupPostalCode?: string;
    pickupLocation: IGeoJSONPoint;
 
    // Destination Address:
    destinationAddress: string;
+   destinationPostalCode?: string;
    destinationLocation: IGeoJSONPoint;
 
    // Ride Date:

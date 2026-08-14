@@ -53,6 +53,9 @@ const bookingSchema = new Schema<IBookingDoc>(
          type: String,
          required: true,
       },
+      pickupPostalCode: {
+         type: String,
+      },
       pickupLocation: {
          type: {
             type: String,
@@ -68,6 +71,9 @@ const bookingSchema = new Schema<IBookingDoc>(
       destinationAddress: {
          type: String,
          required: true,
+      },
+      destinationPostalCode: {
+         type: String,
       },
       destinationLocation: {
          type: {
