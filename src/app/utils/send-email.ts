@@ -24,10 +24,10 @@ export const sendEmail = async ({
 }) => {
    try {
       const info = await transporter.sendMail({
-         from: '"Medical Booking Portal" <team@example.com>', // sender address
+         from: `"Medical Booking Portal" <${configs.nodemailerEmail}>`, // sender address matches authenticated user
          to: to, // list of recipients
          subject: subject, // subject line
-         text: text, // plain text body
+         text: text || "Please enable HTML to view this email.", // plain text fallback is required by many spam filters
          html: html,
       });
 
@@ -50,7 +50,22 @@ export const driverPasswordChangedTemplate = ({
    password: string;
    companyName: string;
 }) => {
-   return `
+   const text = `Hallo ${driverName},
+
+Ihr Passwort für Ihr Fahrerkonto wurde von Ihrem Unternehmensadministrator geändert.
+Sie können sich mit den folgenden Zugangsdaten anmelden:
+
+Neues Passwort: ${password}
+
+Hinweis: Aus Sicherheitsgründen empfehlen wir Ihnen, das Passwort nach der ersten Anmeldung zu ändern.
+Falls Sie Fragen haben, wenden Sie sich bitte an Ihren Unternehmensadministrator.
+
+Mit freundlichen Grüßen,
+${companyName}
+
+Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht auf diese Nachricht.`;
+
+   const html = `
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -121,4 +136,62 @@ export const driverPasswordChangedTemplate = ({
 </body>
 </html>
 `;
+
+   return { text, html };
+};
+
+export const emailVerificationTemplate = ({
+   name,
+   verificationLink,
+}: {
+   name: string;
+   verificationLink: string;
+}) => {
+   const text = `Hello ${name},
+
+Thank you for registering. Please open the link below to verify your email address and activate your account:
+${verificationLink}
+
+If you didn't create an account, you can safely ignore this email.`;
+
+   const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Verification</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:40px 0;background:#f4f4f4;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#fff;border-radius:8px;overflow:hidden;">
+          <tr>
+            <td style="background:#1f2937;color:#fff;padding:24px;text-align:center;font-size:24px;font-weight:bold;">
+              Verify Your Email Address
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;color:#333;font-size:16px;line-height:1.7;">
+              <p>Hello <strong>${name}</strong>,</p>
+              <p>Thank you for registering. Please click the button below to verify your email address and activate your account.</p>
+              <p style="text-align:center;margin-top:24px;margin-bottom:24px;">
+                <a href="${verificationLink}" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;font-weight:bold;border-radius:4px;">
+                  Verify Email
+                </a>
+              </p>
+              <p>If you didn't create an account, you can safely ignore this email.</p>
+              <p style="margin-top:24px;font-size:14px;color:#666;">Or copy and paste this link into your browser:<br/><a href="${verificationLink}">${verificationLink}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+   return { text, html };
 };

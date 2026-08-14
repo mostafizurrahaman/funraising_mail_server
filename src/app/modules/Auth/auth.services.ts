@@ -13,7 +13,11 @@ import { generateUniqueCompanyCode } from "../Company/company.utils";
 import { geoLocationType } from "../Company/company.constants";
 import { deleteFileByUrl } from "../../utils/delete-file-from-cloudinary";
 import type { IJwtUserPayload } from "../../types";
-import { createToken } from "../../utils";
+import { createToken, verifyToken } from "../../utils";
+import {
+   emailVerificationTemplate,
+   sendEmail,
+} from "../../utils/send-email";
 import type { IAuthDoc } from "./auth.interface";
 
 // ? Organization Signup
@@ -172,6 +176,35 @@ const signupIntoDB = async (
       }
 
       await session.commitTransaction();
+
+      // Generate verification token
+      const verifyToken = createToken(
+         {
+            _id: user?._id?.toString(),
+            name: user.name!,
+            email: user?.email,
+            phone: user?.phone!,
+            profileImage: user.profileImage!,
+            role: user.role!,
+            status: user.status!,
+         },
+         configs.verifyEmailSecret,
+         configs.verifyEmailExpiresIn,
+      );
+
+      // Send verification email
+      const verificationLink = `${configs.frontendDomain}/verify-email?token=${verifyToken}`;
+      const emailContent = emailVerificationTemplate({
+         name: user.name,
+         verificationLink,
+      });
+      await sendEmail({
+         to: user.email,
+         subject: "Verify Your Email",
+         text: emailContent.text,
+         html: emailContent.html,
+      });
+
       return user;
    } catch (error) {
       await deleteFileByUrl(image.url);
@@ -215,6 +248,12 @@ const organizationLogin = async (payload: TLoginPayload) => {
 
    // ? check is user statuses ?:
    if (existingUser.status === AuthStatus.PENDING) {
+      if (!existingUser.isVerified) {
+         throw new AppError(
+            httpStatus.FORBIDDEN,
+            "Please verify your email address to log in.",
+         );
+      }
       throw new AppError(
          httpStatus.BAD_REQUEST,
          "Your account is pending approval. Please wait for admin verification.",
@@ -373,6 +412,12 @@ const driverLogin = async (payload: TLoginPayload) => {
 
    // ? check is user statuses ?:
    if (existingUser.status === AuthStatus.PENDING) {
+      if (!existingUser.isVerified) {
+         throw new AppError(
+            httpStatus.FORBIDDEN,
+            "Please verify your email address to log in.",
+         );
+      }
       throw new AppError(
          httpStatus.BAD_REQUEST,
          "Your account is pending approval. Please wait for admin verification.",
@@ -534,10 +579,78 @@ const getProfileFromDB = async (user: IAuthDoc) => {
    return profile?.[0];
 };
 
+// ? Verify Email:
+const verifyEmail = async (token: string) => {
+   // 1. Verify the token
+   const decoded = verifyToken(token, configs.verifyEmailSecret);
+
+   // 2. Find the user
+   const user = await Auth.findById(decoded._id);
+   if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User not found");
+   }
+
+   // 3. Check if already verified
+   if (user.isVerified) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Email is already verified");
+   }
+
+   // 4. Update the user status and isVerified flag
+   user.isVerified = true;
+   user.status = AuthStatus.ACTIVE;
+   await user.save();
+
+   return null;
+};
+
+// ? Resend Verification Email:
+const resendVerificationEmail = async (email: string) => {
+   const user = await Auth.findOne({ email });
+   if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User not found");
+   }
+
+   if (user.isVerified) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Email is already verified");
+   }
+
+   // Generate new verification token
+   const verifyToken = createToken(
+      {
+         _id: user?._id?.toString(),
+         name: user.name!,
+         email: user?.email,
+         phone: user?.phone!,
+         profileImage: user.profileImage!,
+         role: user.role!,
+         status: user.status!,
+      },
+      configs.verifyEmailSecret,
+      configs.verifyEmailExpiresIn,
+   );
+
+   // Send verification email
+   const verificationLink = `${configs.frontendDomain}/verify-email?token=${verifyToken}`;
+   const emailContent = emailVerificationTemplate({
+      name: user.name,
+      verificationLink,
+   });
+   await sendEmail({
+      to: user.email,
+      subject: "Verify Your Email",
+      text: emailContent.text,
+      html: emailContent.html,
+   });
+
+   return null;
+};
+
 export const AuthServices = {
    signupIntoDB,
    organizationLogin,
    adminLogin,
    driverLogin,
    getProfileFromDB,
+   verifyEmail,
+   resendVerificationEmail,
 };

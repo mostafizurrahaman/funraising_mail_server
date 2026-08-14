@@ -5,6 +5,7 @@ import {
    setCookie,
 } from "../../utils";
 import httpStatus from "http-status";
+import { AppError } from "../../errors";
 import { AuthServices } from "./auth.services";
 
 // 1. Signup (Owner)
@@ -117,11 +118,49 @@ const logout = catchAsync(async (req, res) => {
    });
 });
 
+// ?? Verify Email
+const verifyEmail = catchAsync(async (req, res) => {
+   const { token } = req.body;
+
+   if (!token) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Token is required");
+   }
+
+   const result = await AuthServices.verifyEmail(token);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Email verified successfully!",
+      data: result,
+   });
+});
+
+// ?? Resend Verification Email
+const resendVerificationEmail = catchAsync(async (req, res) => {
+   const { email } = req.body;
+
+   if (!email) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Email is required");
+   }
+
+   const result = await AuthServices.resendVerificationEmail(email);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Verification email resent successfully!",
+      data: result,
+   });
+});
+
 export const AuthController = {
    signUp,
    organizationLogin,
    adminLogin,
    driverLogin,
    getMe,
-   logout
+   logout,
+   verifyEmail,
+   resendVerificationEmail
 };

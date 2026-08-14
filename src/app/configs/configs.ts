@@ -40,6 +40,13 @@ const envValidationSchema = z.object({
    resetTokenExpiresIn: z.string({
       error: "Reset token secret is required!",
    }),
+   verifyEmailSecret: z.string({
+      error: "Verify email secret is required!",
+   }),
+   verifyEmailExpiresIn: z.string({
+      error: "Verify email expires in is required!",
+   }),
+   frontendDomain: requiredString("Frontend Domain"),
 
    passwordSaltRound: z.number({
       error: "Password salt round is required!",
@@ -84,6 +91,9 @@ const envs: TConfigType = {
    refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN!,
    resetTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
    resetTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN!,
+   verifyEmailSecret: process.env.VERIFY_EMAIL_SECRET!,
+   verifyEmailExpiresIn: process.env.VERIFY_EMAIL_EXPIRES_IN!,
+   frontendDomain: process.env.FRONTEND_DOMAIN!,
    passwordSaltRound: Number(process.env.PASSWORD_SALT_ROUND),
    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY!,
    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET!,
