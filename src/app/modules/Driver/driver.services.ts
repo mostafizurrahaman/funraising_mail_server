@@ -222,6 +222,7 @@ const getAllDrivers = async (user: IAuthDoc, query: TGetAllDriverQuery) => {
       {
          $match: {
             role: AuthRole.DRIVER,
+            company: user?._id,
          },
       },
    ];
