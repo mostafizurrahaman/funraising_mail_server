@@ -45,4 +45,10 @@ router.get("/me", auth(), AuthController.getMe);
 // ? Logout:
 router.post("/logout", AuthController.logout);
 
+// ? Verify Email:
+router.post("/verify-email", AuthController.verifyEmail);
+
+// ? Resend Verification Email:
+router.post("/resend-verification-email", AuthController.resendVerificationEmail);
+
 export const authRoutes = router;

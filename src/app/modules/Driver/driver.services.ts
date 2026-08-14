@@ -19,8 +19,10 @@ import { deleteFileByUrl } from "../../utils/delete-file-from-cloudinary";
 import { driverSearchAbleFields } from "./driver.constant";
 import {
    driverPasswordChangedTemplate,
+   emailVerificationTemplate,
    sendEmail,
 } from "../../utils/send-email";
+import { createToken } from "../../utils";
 import { Booking, BookingStatus } from "../Booking";
 
 // ** Create Driver **
@@ -122,8 +124,8 @@ const createDriverIntoDB = async (
                passwordHash,
                phone,
                profileImage: image?.url as string,
-               status: AuthStatus.ACTIVE,
-               isVerified: true,
+               status: AuthStatus.PENDING,
+               isVerified: false,
                role: AuthRole.DRIVER,
             },
          ],
@@ -156,6 +158,34 @@ const createDriverIntoDB = async (
             "Failed to create driver profile.",
          );
       }
+
+      // Generate verification token
+      const verifyToken = createToken(
+         {
+            _id: user?._id?.toString(),
+            name: user.name!,
+            email: user?.email,
+            phone: user?.phone!,
+            profileImage: user.profileImage!,
+            role: user.role!,
+            status: user.status!,
+         },
+         configs.verifyEmailSecret,
+         configs.verifyEmailExpiresIn,
+      );
+
+      // Send verification email
+      const verificationLink = `${configs.frontendDomain}/verify-email?token=${verifyToken}`;
+      const emailContent = emailVerificationTemplate({
+         name: user.name,
+         verificationLink,
+      });
+      await sendEmail({
+         to: user.email,
+         subject: "Verify Your Email",
+         text: emailContent.text,
+         html: emailContent.html,
+      });
 
       await session.commitTransaction();
       return user;
@@ -392,7 +422,7 @@ const setNewPassword = async (
       validateBeforeSave: true,
    });
 
-   const html = driverPasswordChangedTemplate({
+   const emailContent = driverPasswordChangedTemplate({
       driverName: driver.name,
       email: driver.email,
       password: newPassword,
@@ -402,7 +432,8 @@ const setNewPassword = async (
    await sendEmail({
       to: driver.email,
       subject: "Ihr Passwort wurde geändert",
-      html,
+      text: emailContent.text,
+      html: emailContent.html,
    });
 
    return null;
