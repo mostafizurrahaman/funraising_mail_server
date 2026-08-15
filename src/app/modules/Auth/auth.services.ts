@@ -14,10 +14,7 @@ import { geoLocationType } from "../Company/company.constants";
 import { deleteFileByUrl } from "../../utils/delete-file-from-cloudinary";
 import type { IJwtUserPayload } from "../../types";
 import { createToken, verifyToken } from "../../utils";
-import {
-   emailVerificationTemplate,
-   sendEmail,
-} from "../../utils/send-email";
+import { emailVerificationTemplate, sendEmail } from "../../utils/send-email";
 import type { IAuthDoc } from "./auth.interface";
 
 // ? Organization Signup
@@ -100,7 +97,11 @@ const signupIntoDB = async (
    }
 
    // ** If profile image uploaded:
-   const image = await uploadFileIntoCloudinary(profileImage, "/user/profiles");
+   let image = undefined;
+
+   if (profileImage) {
+      image = await uploadFileIntoCloudinary(profileImage, "/user/profiles");
+   }
 
    if (!image) {
       throw new AppError(

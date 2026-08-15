@@ -19,11 +19,11 @@ const uploadFileIntoCloudinary = (
    folder: string,
 ): Promise<UploadApiResponse | undefined> => {
    return new Promise((resolve, reject) => {
-      const resourceType = file.mimetype?.startsWith("image/")
+      const resourceType = file?.mimetype?.startsWith("image/")
          ? "image"
-         : file.mimetype?.startsWith("video/")
-           ? "video"
-           : "auto";
+         : file?.mimetype?.startsWith("video/")
+            ? "video"
+            : "auto";
 
       const steam = cloudinary.uploader.upload_stream(
          {
@@ -35,7 +35,7 @@ const uploadFileIntoCloudinary = (
                return reject(
                   new AppError(
                      httpStatus.BAD_REQUEST,
-                     `Failed to upload ${file.mimetype}`,
+                     `Failed to upload ${file?.mimetype}`,
                   ),
                );
             }
@@ -43,7 +43,7 @@ const uploadFileIntoCloudinary = (
          },
       );
 
-      streamifier.createReadStream(file.buffer).pipe(steam);
+      streamifier.createReadStream(file?.buffer)?.pipe(steam);
    });
 };
 
