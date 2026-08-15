@@ -98,7 +98,7 @@ const createDriverIntoDB = async (
       image = await uploadFileIntoCloudinary(profileImage, "/driver/profiles");
    }
 
-   if (!image) {
+   if (!image && profileImage) {
       throw new AppError(
          httpStatus.NOT_FOUND,
          "Failed to upload profile image!",

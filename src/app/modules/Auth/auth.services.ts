@@ -103,7 +103,7 @@ const signupIntoDB = async (
       image = await uploadFileIntoCloudinary(profileImage, "/user/profiles");
    }
 
-   if (!image) {
+   if (!image && profileImage) {
       throw new AppError(
          httpStatus.NOT_FOUND,
          "Failed to upload profile image!",
