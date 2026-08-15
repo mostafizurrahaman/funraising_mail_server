@@ -92,7 +92,7 @@ const createDriverIntoDB = async (
    }
 
    // ** If profile image uploaded:
-   let image = undefined;
+   let image = null;
 
    if (image) {
       image = await uploadFileIntoCloudinary(profileImage, "/driver/profiles");
@@ -191,7 +191,7 @@ const createDriverIntoDB = async (
       await session.commitTransaction();
       return user;
    } catch (error) {
-      await deleteFileByUrl(image.url);
+      await deleteFileByUrl(image?.url as string);
       console.log(error);
       await session.abortTransaction();
       throw error;

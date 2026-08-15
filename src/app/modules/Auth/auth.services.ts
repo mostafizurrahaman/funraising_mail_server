@@ -97,7 +97,7 @@ const signupIntoDB = async (
    }
 
    // ** If profile image uploaded:
-   let image = undefined;
+   let image = null;
 
    if (profileImage) {
       image = await uploadFileIntoCloudinary(profileImage, "/user/profiles");
@@ -208,7 +208,7 @@ const signupIntoDB = async (
 
       return user;
    } catch (error) {
-      await deleteFileByUrl(image.url);
+      await deleteFileByUrl(image?.url as string);
       console.log(error);
       await session.abortTransaction();
       throw error;
