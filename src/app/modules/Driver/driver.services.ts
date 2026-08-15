@@ -92,10 +92,11 @@ const createDriverIntoDB = async (
    }
 
    // ** If profile image uploaded:
-   const image = await uploadFileIntoCloudinary(
-      profileImage,
-      "/driver/profiles",
-   );
+   let image = undefined;
+
+   if (image) {
+      image = await uploadFileIntoCloudinary(profileImage, "/driver/profiles");
+   }
 
    if (!image) {
       throw new AppError(
