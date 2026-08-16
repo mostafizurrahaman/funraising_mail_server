@@ -195,3 +195,59 @@ If you didn't create an account, you can safely ignore this email.`;
 
    return { text, html };
 };
+
+export const forgetPasswordTemplate = ({
+   name,
+   resetLink,
+}: {
+   name: string;
+   resetLink: string;
+}) => {
+   const text = `Hello ${name},
+
+You have requested to reset your password. Please open the link below to reset it:
+${resetLink}
+
+If you didn't request a password reset, you can safely ignore this email.`;
+
+   const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset Password</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:40px 0;background:#f4f4f4;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#fff;border-radius:8px;overflow:hidden;">
+          <tr>
+            <td style="background:#1f2937;color:#fff;padding:24px;text-align:center;font-size:24px;font-weight:bold;">
+              Reset Your Password
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;color:#333;font-size:16px;line-height:1.7;">
+              <p>Hello <strong>${name}</strong>,</p>
+              <p>You recently requested to reset your password. Please click the button below to proceed.</p>
+              <p style="text-align:center;margin-top:24px;margin-bottom:24px;">
+                <a href="${resetLink}" style="display:inline-block;padding:12px 24px;background:#ef4444;color:#fff;text-decoration:none;font-weight:bold;border-radius:4px;">
+                  Reset Password
+                </a>
+              </p>
+              <p>If you didn't request a password reset, you can safely ignore this email.</p>
+              <p style="margin-top:24px;font-size:14px;color:#666;">Or copy and paste this link into your browser:<br/><a href="${resetLink}">${resetLink}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+   return { text, html };
+};

@@ -65,11 +65,52 @@ const loginSchema = z.object({
    }),
 });
 
+const forgetPasswordSchema = z.object({
+   body: z.object({
+      email: requiredEmail("Email"),
+   }),
+});
+
+const resetPasswordSchema = z.object({
+   body: z.object({
+      token: requiredString("Token"),
+      password: requiredString("New Password").min(6, "Password must be at least 6 characters"),
+   }),
+});
+
+const updateProfileSchema = z.object({
+   body: z.object({
+      name: optionalString("Name"),
+      phone: z
+         .string({
+            error: `phone number should be string!`,
+         })
+         .regex(GERMANY_PHONE_NUMBER_REGEX, {
+            error: "Phone number is invalid!",
+         })
+         .optional(),
+   }),
+});
+
+const updatePasswordSchema = z.object({
+   body: z.object({
+      oldPassword: requiredString("Old Password"),
+      newPassword: requiredString("New Password").min(6, "Password must be at least 6 characters"),
+   }),
+});
+
 export const AuthValidationSchema = {
    signupSchema,
    loginSchema,
+   forgetPasswordSchema,
+   resetPasswordSchema,
+   updateProfileSchema,
+   updatePasswordSchema,
 };
 
 export type TSignupPayload = z.infer<typeof signupSchema.shape.body>;
-
 export type TLoginPayload = z.infer<typeof loginSchema.shape.body>;
+export type TForgetPasswordPayload = z.infer<typeof forgetPasswordSchema.shape.body>;
+export type TResetPasswordPayload = z.infer<typeof resetPasswordSchema.shape.body>;
+export type TUpdateProfilePayload = z.infer<typeof updateProfileSchema.shape.body>;
+export type TUpdatePasswordPayload = z.infer<typeof updatePasswordSchema.shape.body>;

@@ -7,13 +7,30 @@ import {
 import httpStatus from "http-status";
 import { AppError } from "../../errors";
 import { AuthServices } from "./auth.services";
+import { TMulterFile } from "@/app/types/multer.types";
+
+interface ISignUpFiles {
+   profileImage: TMulterFile[];
+   documents: TMulterFile[];
+}
 
 // 1. Signup (Owner)
 const signUp = catchAsync(async (req, res) => {
    const payload = req.body;
-   const profileImage = req.file as Express.Multer.File;
+   console.log(req.files);
+   const files = req.files as unknown as ISignUpFiles;
+   const profileImage = files?.profileImage?.[0] as TMulterFile;
+   const documents = files?.documents as TMulterFile[];
 
-   const result = await AuthServices.signupIntoDB(payload, profileImage);
+   console.log({
+      documents,
+   });
+
+   const result = await AuthServices.signupIntoDB(
+      payload,
+      profileImage,
+      documents,
+   );
 
    sendResponse(res, {
       success: true,
@@ -155,6 +172,60 @@ const resendVerificationEmail = catchAsync(async (req, res) => {
    });
 });
 
+const forgetPassword = catchAsync(async (req, res) => {
+   const payload = req.body;
+   await AuthServices.forgetPassword(payload);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Password reset link sent to your email successfully!",
+      data: null,
+   });
+});
+
+const resetPassword = catchAsync(async (req, res) => {
+   const payload = req.body;
+   await AuthServices.resetPassword(payload);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Password reset successfully!",
+      data: null,
+   });
+});
+
+const updateProfile = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+   const payload = req.body;
+   const files = req.files as unknown as { profileImage?: TMulterFile[] };
+   const profileImage = files?.profileImage?.[0] as TMulterFile | undefined;
+
+   const result = await AuthServices.updateProfile(user, payload, profileImage);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Profile updated successfully!",
+      data: result,
+   });
+});
+
+const updatePassword = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+   const payload = req.body;
+
+   await AuthServices.updatePassword(user, payload);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Password updated successfully!",
+      data: null,
+   });
+});
+
 export const AuthController = {
    signUp,
    organizationLogin,
@@ -164,4 +235,8 @@ export const AuthController = {
    logout,
    verifyEmail,
    resendVerificationEmail,
+   forgetPassword,
+   resetPassword,
+   updateProfile,
+   updatePassword,
 };

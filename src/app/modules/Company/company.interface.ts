@@ -20,6 +20,7 @@ interface ICompany {
    postalCode?: string;
    radiusKm: number;
    note?: string;
+   documents: string[];
 }
 
 export interface ICompanyDoc extends ICompany, Document {}

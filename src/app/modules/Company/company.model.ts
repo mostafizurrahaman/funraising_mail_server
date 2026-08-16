@@ -66,6 +66,10 @@ const companySchema = new Schema<ICompanyDoc>(
       note: {
          type: String,
       },
+      documents: {
+         type: [String],
+         min: 1,
+      },
    },
    {
       timestamps: true,

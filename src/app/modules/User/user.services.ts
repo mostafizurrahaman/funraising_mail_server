@@ -161,6 +161,13 @@ const getAllUserFromDB = async (query: TGetAllUserQueryType) => {
                "$$REMOVE",
             ],
          },
+         documents: {
+            $cond: [
+               { $eq: ["$role", AuthRole.COMPANY] },
+               "$companyDetails.documents",
+               "$$REMOVE",
+            ],
+         },
          note: {
             $cond: [
                { $eq: ["$role", AuthRole.COMPANY] },
@@ -398,13 +405,6 @@ const getCompanyByCompanyCode = async (companyCode: string) => {
 
    if (!company) {
       throw new AppError(httpStatus.NOT_FOUND, "Company not found!");
-   }
-
-   if (company.user.status !== AuthStatus.ACTIVE) {
-      throw new AppError(
-         httpStatus.BAD_REQUEST,
-         `This company is not active. Current status "${company.user.status}"`,
-      );
    }
 
    return company;
