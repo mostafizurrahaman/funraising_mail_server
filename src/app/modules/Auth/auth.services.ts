@@ -1,12 +1,21 @@
 import { AppError } from "../../errors";
 import { Auth } from "./auth.model";
-import type { TLoginPayload, TSignupPayload } from "./auth.validation";
+import type {
+   TLoginPayload,
+   TSignupPayload,
+   TForgetPasswordPayload,
+   TResetPasswordPayload,
+   TUpdateProfilePayload,
+   TUpdatePasswordPayload
+} from "./auth.validation";
 import httpStatus, { status } from "http-status";
 import { AuthPermission, AuthRole, AuthStatus } from "./auth.constant";
 import { comparePassword, hashPassword } from "../../utils/password";
 import { configs } from "../../configs";
 import type { TMulterFile } from "../../types/multer.types";
-import uploadFileIntoCloudinary from "../../utils/upload-file-into-cloudinary";
+import uploadFileIntoCloudinary, {
+   uploadMultipleFilesIntoCloudinary,
+} from "../../utils/upload-file-into-cloudinary";
 import mongoose, { Types, type PipelineStage } from "mongoose";
 import { Company } from "../Company/company.model";
 import { generateUniqueCompanyCode } from "../Company/company.utils";
@@ -14,13 +23,15 @@ import { geoLocationType } from "../Company/company.constants";
 import { deleteFileByUrl } from "../../utils/delete-file-from-cloudinary";
 import type { IJwtUserPayload } from "../../types";
 import { createToken, verifyToken } from "../../utils";
-import { emailVerificationTemplate, sendEmail } from "../../utils/send-email";
+import { emailVerificationTemplate, sendEmail, forgetPasswordTemplate } from "../../utils/send-email";
 import type { IAuthDoc } from "./auth.interface";
+import { document } from "pdfkit/js/page";
 
 // ? Organization Signup
 const signupIntoDB = async (
    payload: TSignupPayload,
    profileImage: TMulterFile,
+   documents: TMulterFile[],
 ) => {
    const {
       name,
@@ -95,6 +106,17 @@ const signupIntoDB = async (
          );
       }
    }
+   console.log(documents);
+   if (!documents || !Array.isArray(documents)) {
+      console.log({
+         isDocuments: !documents,
+         isArray: !Array.isArray(documents),
+      });
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "Please provide company's legal documents.",
+      );
+   }
 
    // ** If profile image uploaded:
    let image = null;
@@ -108,6 +130,16 @@ const signupIntoDB = async (
          httpStatus.NOT_FOUND,
          "Failed to upload profile image!",
       );
+   }
+
+   let newDocuments: string[] = [];
+
+   if (documents && Array.isArray(documents)) {
+      const uploadedDocuments = await uploadMultipleFilesIntoCloudinary(
+         documents,
+         "/company-documents",
+      );
+      newDocuments = uploadedDocuments as string[];
    }
 
    const session = await mongoose.startSession();
@@ -159,6 +191,7 @@ const signupIntoDB = async (
                   type: geoLocationType.Point,
                   coordinates: [longitude, latitude],
                },
+               documents: newDocuments as string[],
                radiusKm,
                postalCode,
                note,
@@ -486,8 +519,8 @@ const getProfileFromDB = async (user: IAuthDoc) => {
       user.role === AuthRole.COMPANY
          ? "companies"
          : user.role === AuthRole.DRIVER
-           ? "drivers"
-           : null;
+            ? "drivers"
+            : null;
 
    if (lookupCollection) {
       pipeline.push({
@@ -646,6 +679,113 @@ const resendVerificationEmail = async (email: string) => {
    return null;
 };
 
+const forgetPassword = async (payload: TForgetPasswordPayload) => {
+   const user = await Auth.findOne({ email: payload.email });
+   if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User with this email not found!");
+   }
+
+   const resetToken = createToken(
+      {
+         _id: user._id.toString(),
+         name: user.name!,
+         email: user?.email,
+         phone: user?.phone!,
+         profileImage: user.profileImage!,
+         role: user.role!,
+         status: user.status!,
+      },
+      configs.verifyEmailSecret,
+      "15m"
+   );
+
+   const resetLink = `${configs.frontendDomain}/reset-password?token=${resetToken}`;
+   const emailContent = forgetPasswordTemplate({
+      name: user.name,
+      resetLink,
+   });
+
+   await sendEmail({
+      to: user.email,
+      subject: "Reset your password",
+      text: emailContent.text,
+      html: emailContent.html,
+   });
+
+   return null;
+};
+
+const resetPassword = async (payload: TResetPasswordPayload) => {
+   const decoded = verifyToken(payload.token, configs.verifyEmailSecret) as any;
+
+   const user = await Auth.findById(decoded._id);
+   if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User not found!");
+   }
+
+   const passwordHash = await hashPassword(payload.password, configs.passwordSaltRound);
+
+   user.passwordHash = passwordHash;
+   user.passwordChangedAt = new Date();
+   await user.save();
+
+   return null;
+};
+
+const updateProfile = async (
+   userContext: IAuthDoc,
+   payload: TUpdateProfilePayload,
+   profileImage?: TMulterFile
+) => {
+   const user = await Auth.findById(userContext._id);
+   if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User not found!");
+   }
+
+   if (payload.name) user.name = payload.name;
+   if (payload.phone) user.phone = payload.phone;
+
+   if (profileImage) {
+      const image = await uploadFileIntoCloudinary(profileImage, "/user/profiles");
+      if (image) {
+         if (user.profileImage) {
+            try {
+               await deleteFileByUrl(user.profileImage);
+            } catch (err) {
+               console.log("Failed to delete old profile image", err);
+            }
+         }
+         user.profileImage = image.url as string;
+      }
+   }
+
+   await user.save();
+   return user;
+};
+
+const updatePassword = async (
+   userContext: IAuthDoc,
+   payload: TUpdatePasswordPayload
+) => {
+   const user = await Auth.findById(userContext._id).select("+passwordHash");
+   if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User not found!");
+   }
+
+   const isPasswordMatch = await comparePassword(payload.oldPassword, user.passwordHash);
+   if (!isPasswordMatch) {
+      throw new AppError(httpStatus.FORBIDDEN, "Old password doesn't match!");
+   }
+
+   const newPasswordHash = await hashPassword(payload.newPassword, configs.passwordSaltRound);
+
+   user.passwordHash = newPasswordHash;
+   user.passwordChangedAt = new Date();
+   await user.save();
+
+   return null;
+};
+
 export const AuthServices = {
    signupIntoDB,
    organizationLogin,
@@ -654,4 +794,8 @@ export const AuthServices = {
    getProfileFromDB,
    verifyEmail,
    resendVerificationEmail,
+   forgetPassword,
+   resetPassword,
+   updateProfile,
+   updatePassword,
 };
