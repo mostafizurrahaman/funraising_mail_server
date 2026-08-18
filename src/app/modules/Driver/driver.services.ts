@@ -223,7 +223,6 @@ const getAllDrivers = async (user: IAuthDoc, query: TGetAllDriverQuery) => {
       {
          $match: {
             role: AuthRole.DRIVER,
-            company: user?._id,
          },
       },
    ];
@@ -307,6 +306,12 @@ const getAllDrivers = async (user: IAuthDoc, query: TGetAllDriverQuery) => {
          role: "$role",
          createdAt: "$createdAt",
          updatedAt: "$updatedAt",
+      },
+   });
+
+   pipeline.push({
+      $match: {
+         companyId: user?._id,
       },
    });
 
