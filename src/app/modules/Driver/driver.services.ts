@@ -94,7 +94,7 @@ const createDriverIntoDB = async (
    // ** If profile image uploaded:
    let image = null;
 
-   if (image) {
+   if (profileImage) {
       image = await uploadFileIntoCloudinary(profileImage, "/driver/profiles");
    }
 
