@@ -13,6 +13,8 @@ import { TrackingStateRoutes } from "../modules/TrackingState/tracking-state.rou
 import { DriverPortalRoutes } from "../modules/DriverPortal";
 const router = express.Router();
 
+import { GlobalSurchargeRoutes } from "../modules/GlobalSurcharge/globalSurcharge.route";
+
 const routes = [
    {
       path: "/auth",
@@ -29,6 +31,10 @@ const routes = [
    {
       path: "/surcharge",
       route: SurchargeRoutes,
+   },
+   {
+      path: "/global-surcharge",
+      route: GlobalSurchargeRoutes,
    },
    {
       path: "/bank",

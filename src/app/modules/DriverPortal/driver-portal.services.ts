@@ -108,7 +108,7 @@ const getDriverOverview = async (driverUserId: string) => {
                   { $count: "count" },
                ],
                started: [
-                  { $match: { bookingStatus: BookingStatus.STARTED } },
+                  { $match: { bookingStatus: BookingStatus.IN_TRANSIT } },
                   { $count: "count" },
                ],
                completed: [

@@ -61,9 +61,10 @@ const baseBookingValidation = {
       },
       { message: "Ride date cannot be in the past" },
    ),
-   rideTime: requiredString("Ride Time").regex(timeRegex, {
-      message: "Ride time must be in 24-hour format (HH:MM), e.g., 14:30",
+   desiredArrivalTime: requiredString("Desired Arrival Time").regex(timeRegex, {
+      message: "Desired arrival time must be in 24-hour format (HH:MM), e.g., 14:30",
    }),
+   tripIntent: enumString(["ONE_WAY", "ROUND_TRIP"], "Trip Intent"),
    notes: requiredString("Notes")
       .max(500, {
          message: "Notes cannot exceed 500 characters",
@@ -212,6 +213,15 @@ const rejectBookingByIDSchema = z.object({
    }),
 });
 
+const cancelRideByDriverSchema = z.object({
+   params: z.object({
+      id: requiredMongooseId("Booking ID"),
+   }),
+   body: z.object({
+      cancelReason: requiredString("Cancel Reason"),
+   }),
+});
+
 const cashReceiveForBookingByIDSchema = z.object({
    params: z.object({
       id: requiredMongooseId("Booking ID"),
@@ -223,6 +233,7 @@ const startBookingSchema = z.object({
       id: requiredMongooseId("Booking ID"),
    }),
    body: z.object({
+      status: requiredString("Status"),
       longitude: z.coerce
          .number({
             error: "Driver's current longitude is required to start.",
@@ -247,6 +258,7 @@ export const BookingValidationSchema = {
    assignDriverByCompanySchema,
    assignDriverBySelfSchema,
    rejectBookingByIDSchema,
+   cancelRideByDriverSchema,
    startBookingSchema,
    cashReceiveForBookingByIDSchema,
 };

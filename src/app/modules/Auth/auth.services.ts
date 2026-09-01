@@ -18,7 +18,7 @@ import uploadFileIntoCloudinary, {
 } from "../../utils/upload-file-into-cloudinary";
 import mongoose, { Types, type PipelineStage } from "mongoose";
 import { Company } from "../Company/company.model";
-import { generateUniqueCompanyCode } from "../Company/company.utils";
+import { generateUniqueCompanyCode, generateCompanySlug } from "../Company/company.utils";
 import { geoLocationType } from "../Company/company.constants";
 import { deleteFileByUrl } from "../../utils/delete-file-from-cloudinary";
 import type { IJwtUserPayload } from "../../types";
@@ -106,6 +106,18 @@ const signupIntoDB = async (
          );
       }
    }
+
+   // * Duplicate company check — runs before any file uploads to fast-fail cheaply
+   // Slug normalizes: "MedRide GmbH" + "10115" → "medride-gmbh--10115"
+   const slug = generateCompanySlug(companyName, postalCode);
+   const existingCompany = await Company.findOne({ slug });
+   if (existingCompany) {
+      throw new AppError(
+         httpStatus.CONFLICT,
+         `A company named "${companyName}" is already registered at postal code ${postalCode}. Please verify your details or contact support if you believe this is an error.`,
+      );
+   }
+
    console.log(documents);
    if (!documents || !Array.isArray(documents)) {
       console.log({
@@ -184,6 +196,7 @@ const signupIntoDB = async (
                user: user?._id,
                companyName,
                companyCode,
+               slug,
                city,
                fleetSize,
                address,

@@ -13,6 +13,12 @@ interface ICompany {
    user: Types.ObjectId;
    companyName: string;
    companyCode: string;
+   /**
+    * URL-safe, normalized identifier derived from companyName + postalCode.
+    * Format: "medride-transports-gmbh--10115"
+    * Used as the unique deduplication key for organizations.
+    */
+   slug: string;
    city: string;
    address?: string;
    serviceArea: IGeoJSONPoint;

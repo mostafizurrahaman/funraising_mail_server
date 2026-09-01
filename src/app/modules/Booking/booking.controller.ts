@@ -98,6 +98,19 @@ const assignDriverByCompany = catchAsync(async (req, res) => {
    });
 });
 
+const unassignDriverByCompany = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+   const bookingId = req.params.id as string;
+   const result = await BookingServices.unassignDriverByCompany(user, bookingId);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Driver unassigned successfully.",
+      data: result,
+   });
+});
+
 const assignBookingToSelf = catchAsync(async (req, res) => {
    const user = await getUserFromRequest(req);
    const bookingId = req.params.id as string;
@@ -124,6 +137,20 @@ const rejectTheAssignment = catchAsync(async (req, res) => {
    });
 });
 
+const cancelRideByDriver = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+   const bookingId = req.params.id as string;
+   const { cancelReason } = req.body;
+   const result = await BookingServices.cancelRideByDriver(user, bookingId, cancelReason);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Ride cancelled successfully.",
+      data: result,
+   });
+});
+
 const cashReceivedForBooking = catchAsync(async (req, res) => {
    const user = await getUserFromRequest(req);
    const bookingId = req.params.id as string;
@@ -144,7 +171,7 @@ const startBooking = catchAsync(async (req, res) => {
    const bookingId = req.params.id as string;
    const { longitude, latitude } = req.body;
 
-   const result = await BookingServices.startBookingByDriver(user, bookingId, {
+   const result = await BookingServices.updateBookingStatusByDriver(user, bookingId, req.body.status, {
       longitude,
       latitude,
    });
@@ -177,7 +204,9 @@ export const BookingController = {
    assignDriverByCompany,
    assignBookingToSelf,
    rejectTheAssignment,
+   cancelRideByDriver,
    startBooking,
    cashReceivedForBooking,
    getBookingByIdPublic,
+   unassignDriverByCompany,
 };

@@ -26,9 +26,11 @@ export interface IBooking {
    destinationPostalCode?: string;
    destinationLocation: IGeoJSONPoint;
 
-   // Ride Date:
+   // Ride Date & Time:
    rideDate: Date;
-   rideTime: string;
+   desiredArrivalTime: string; // Will rename to Desired Arrival Time in frontend, but backend can keep as desiredArrivalTime or we use arrivalTime
+   tripIntent: 'ONE_WAY' | 'ROUND_TRIP';
+   calculatedPickupTime?: string;
    rideAt: Date;
 
    // Estimated Distance:
@@ -48,6 +50,7 @@ export interface IBooking {
 
    // Booking Status:
    bookingStatus: TBookingStatusType;
+   cancelReason?: string;
    completedAt: Date;
 }
 

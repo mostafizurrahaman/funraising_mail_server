@@ -2,9 +2,7 @@ import type { Document, Model, Types } from "mongoose";
 
 export interface ISurcharge {
    user: Types.ObjectId;
-   // pricing: Types.ObjectId;
-   labelSlug: string;
-   label: string;
+   globalSurcharge: Types.ObjectId;
    amount: number;
 }
 

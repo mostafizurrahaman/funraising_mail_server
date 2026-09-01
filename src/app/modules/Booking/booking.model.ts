@@ -91,9 +91,17 @@ const bookingSchema = new Schema<IBookingDoc>(
          type: Date,
          required: true,
       },
-      rideTime: {
+      desiredArrivalTime: {
          type: String,
          required: true,
+      },
+      tripIntent: {
+         type: String,
+         enum: ["ONE_WAY", "ROUND_TRIP"],
+         required: true,
+      },
+      calculatedPickupTime: {
+         type: String,
       },
       rideAt: {
          type: Date,
@@ -131,6 +139,9 @@ const bookingSchema = new Schema<IBookingDoc>(
          enum: BookingStatusValues,
          required: true,
          default: BookingStatus.NEW,
+      },
+      cancelReason: {
+         type: String,
       },
       completedAt: {
          type: Date,

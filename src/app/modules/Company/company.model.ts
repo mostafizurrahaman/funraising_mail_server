@@ -38,6 +38,13 @@ const companySchema = new Schema<ICompanyDoc>(
          required: true,
          unique: true,
       },
+      slug: {
+         type: String,
+         required: true,
+         unique: true,
+         lowercase: true,
+         trim: true,
+      },
       city: {
          type: String,
          required: true,

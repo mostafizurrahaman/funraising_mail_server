@@ -4,11 +4,24 @@ import type { IErrorSources, ISendErrorResponse } from "../types";
 import httpStatus from "http-status";
 
 export const handleDuplicateError = (err: any): ISendErrorResponse => {
-   const key = Object.keys(err.keyPattern)[0] as string;
+   const keys = Object.keys(err.keyPattern);
+   let message = "";
+   let path = keys[0] as string;
+
+   if (keys.includes("user") && keys.includes("globalSurcharge")) {
+      message = "This surcharge is already added to your company.";
+      path = "globalSurcharge";
+   } else if (keys.length > 1) {
+      message = `This combination of ${keys.join(" and ")} already exists.`;
+      path = keys.join("_");
+   } else {
+      message = `The ${path} '${err.keyValue[path]}' already exists.`;
+   }
+
    const errorSources: IErrorSources[] = [
       {
-         path: key,
-         message: ` "The ${err.keyValue[key]}"  is already Exists`,
+         path,
+         message,
       },
    ];
    const statusCode: number = httpStatus.BAD_REQUEST;

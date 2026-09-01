@@ -8,12 +8,9 @@ const surchargeSchema = new Schema<ISurchargeDoc>(
          ref: "Auth",
          required: true,
       },
-      label: {
-         type: String,
-         required: true,
-      },
-      labelSlug: {
-         type: String,
+      globalSurcharge: {
+         type: Schema.Types.ObjectId,
+         ref: "GlobalSurcharge",
          required: true,
       },
       amount: {
@@ -31,11 +28,11 @@ const surchargeSchema = new Schema<ISurchargeDoc>(
 surchargeSchema.index(
    {
       user: 1,
-      labelSlug: 1,
+      globalSurcharge: 1,
    },
    {
       unique: true,
-      name: "uniq_comp_lbl",
+      name: "uniq_comp_global_surcharge",
    },
 );
 

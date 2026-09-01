@@ -10,7 +10,7 @@ import { AppError } from "../../errors";
 import httpStatus from "http-status";
 import { AuthRole, AuthStatus } from "../Auth/auth.constant";
 import { Driver } from "../Driver";
-import { generateUniqueBookingNumber, prepareRideDateTime, calculateDistance } from "./booking.utils";
+import { generateUniqueBookingNumber, prepareRideDateTime, calculateDistance, calculatePickupTime } from "./booking.utils";
 import { uploadMultipleFilesIntoCloudinary } from "../../utils/upload-file-into-cloudinary";
 import { uploadBufferIntoCloudinary } from "../../utils/upload-buffer-into-cloudinary";
 import { generateInvoicePDF } from "../../utils/pdf-generator";
@@ -18,6 +18,7 @@ import { Booking, GkvBooking, PrivateBooking } from "./booking.model";
 import {
    BookingPaymentStatus,
    BookingStatus,
+   BookingStatusValues,
    BookingType,
    PaymentMethod,
 } from "./booking.constant";
@@ -44,7 +45,8 @@ const createGkbBooking = async (
       destinationLongitude,
       destinationLatitude,
       rideDate,
-      rideTime,
+      desiredArrivalTime,
+      tripIntent,
       insuranceName,
       insuranceNumber,
       vehicleType,
@@ -80,9 +82,9 @@ const createGkbBooking = async (
    // ?? Ride Date and time
    const {
       rideDate: rdDate,
-      rideTime: rdTime,
+      desiredArrivalTime: rdTime,
       rideAt,
-   } = prepareRideDateTime(rideDate, rideTime);
+   } = prepareRideDateTime(rideDate, desiredArrivalTime);
 
    if (rideAt.getTime() < new Date().getTime()) {
       throw new AppError(
@@ -108,6 +110,9 @@ const createGkbBooking = async (
 
    // Estimated Time
    const estTime = Math.max(5, Math.round((distance / 32) * 60));
+
+   // Calculate Pickup Time
+   const calculatedPickupTime = calculatePickupTime(desiredArrivalTime, estTime);
 
    // ?? Generate Booking Number:
    const bookingNumber = await generateUniqueBookingNumber();
@@ -149,7 +154,9 @@ const createGkbBooking = async (
 
       // Date and time:
       rideDate: rdDate,
-      rideTime: rdTime,
+      desiredArrivalTime: rdTime,
+      tripIntent: tripIntent as "ONE_WAY" | "ROUND_TRIP",
+      calculatedPickupTime,
       rideAt: rideAt,
 
       // Estimation and calculation :
@@ -157,7 +164,6 @@ const createGkbBooking = async (
       estimatedRidingTime: estTime,
 
       platformFee: 2, // 2 eur
-      invoiceUrl: "",
       notes,
       bookingStatus: BookingStatus.NEW,
 
@@ -179,33 +185,8 @@ const createGkbBooking = async (
       console.error("Socket error on new GKV booking:", error);
    }
 
-   // Generate and upload PDF Invoice
-   try {
-      const invoiceData = {
-         invoiceNumber: `INV-${bookingNumber}`,
-         date: new Date(),
-         companyName: company.name,
-         customerName: patientName,
-         customerPhone: phone,
-         pickupAddress,
-         destinationAddress,
-         items: [
-            { label: "Platform Fee", amount: 2 },
-            { label: "Estimated Distance", amount: distance },
-         ],
-         totalAmount: 2, // Only platform fee is charged for GKV
-      };
-      
-      const pdfBuffer = await generateInvoicePDF(invoiceData);
-      const invoiceResult = await uploadBufferIntoCloudinary(pdfBuffer, "invoices", `invoice-${bookingNumber}`);
-      
-      if (invoiceResult?.secure_url) {
-         gkvBooking.invoiceUrl = invoiceResult.secure_url;
-         await gkvBooking.save();
-      }
-   } catch (error) {
-      console.error("Failed to generate/upload GKV booking invoice:", error);
-   }
+   // Note: No customer invoice is generated for GKV bookings as they are free for the customer.
+   // The platform fee of 2 EUR is recorded in the model and billed to the company separately.
 
    return gkvBooking;
 };
@@ -221,7 +202,8 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
       destinationLongitude,
       destinationLatitude,
       rideDate,
-      rideTime,
+      desiredArrivalTime,
+      tripIntent,
       notes,
       companyId,
 
@@ -254,15 +236,13 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
       );
    }
 
-   // ?? Retrieved the pricing for the company:
-   const basePricing = await Pricing.findOne({
-      user: company?._id,
-   });
+   // ?? Retrieved the global pricing:
+   const basePricing = await Pricing.findOne();
 
    if (!basePricing || !basePricing.baseFare || !basePricing.perKm) {
       throw new AppError(
          httpStatus.NOT_FOUND,
-         "Pricing for this company not setup yet.",
+         "Global pricing is not setup yet.",
       );
    }
 
@@ -273,13 +253,16 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
       Array.isArray(bookingCharges) &&
       bookingCharges?.length > 0
    ) {
+      const uniqueBookingCharges = [...new Set(bookingCharges)];
+
       const companySurcharges = await Surcharge.find({
          _id: {
-            $in: bookingCharges,
+            $in: uniqueBookingCharges,
          },
-      });
+         user: companyId,
+      }).populate("globalSurcharge");
 
-      if (companySurcharges?.length < bookingCharges.length) {
+      if (companySurcharges?.length < uniqueBookingCharges.length) {
          throw new AppError(
             httpStatus.BAD_REQUEST,
             "Invalid booking options selected.",
@@ -290,17 +273,20 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
    }
 
    const surchargeIds = surcharges?.map((item) => item._id);
-   const snapShot = surcharges.map((item) => ({
-      label: item.label,
-      amount: item.amount,
-   }));
+   const snapShot = surcharges.map((item) => {
+      const gSurcharge: any = item.globalSurcharge;
+      return {
+         label: gSurcharge?.label || "Unknown Surcharge",
+         amount: item.amount,
+      };
+   });
 
    // ?? Ride Date and time
    const {
       rideDate: rdDate,
-      rideTime: rdTime,
+      desiredArrivalTime: rdTime,
       rideAt,
-   } = prepareRideDateTime(rideDate, rideTime);
+   } = prepareRideDateTime(rideDate, desiredArrivalTime);
 
    if (rideAt.getTime() < new Date().getTime()) {
       throw new AppError(
@@ -326,6 +312,9 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
 
    // Estimated Time
    const estTime = Math.max(5, Math.round((distance / 32) * 60));
+
+   // Calculate Pickup Time
+   const calculatedPickupTime = calculatePickupTime(desiredArrivalTime, estTime);
 
    // ?? Generate Booking Number:
    const bookingNumber = await generateUniqueBookingNumber();
@@ -373,7 +362,9 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
 
       // Date and time:
       rideDate: rdDate,
-      rideTime: rdTime,
+      desiredArrivalTime: rdTime,
+      tripIntent: tripIntent as "ONE_WAY" | "ROUND_TRIP",
+      calculatedPickupTime,
       rideAt: rideAt,
 
       // Estimation and calculation :
@@ -381,7 +372,6 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
       estimatedRidingTime: estTime,
 
       platformFee: 2, // 2 eur
-      invoiceUrl: "",
       notes: notes as string,
       bookingStatus: BookingStatus.NEW,
 
@@ -411,7 +401,8 @@ const createPrivateBooking = async (payload: TPrivateBookingPayloadType) => {
       ];
       
       surcharges.forEach(surcharge => {
-         items.push({ label: surcharge.label, amount: surcharge.amount });
+         const gSurcharge: any = surcharge.globalSurcharge;
+         items.push({ label: gSurcharge?.label || "Unknown Surcharge", amount: surcharge.amount });
       });
 
       const invoiceData = {
@@ -721,7 +712,7 @@ const assignDriverByCompany = async (
    const conflictExists = await Booking.exists({
       assignedDriver: driverId,
       rideDate: booking.rideDate,
-      rideTime: booking.rideTime,
+      desiredArrivalTime: booking.desiredArrivalTime,
       bookingStatus: BookingStatus.ASSIGNED,
    });
 
@@ -749,6 +740,63 @@ const assignDriverByCompany = async (
    return booking;
 };
 
+const unassignDriverByCompany = async (
+   companyUser: IAuthDoc,
+   bookingId: string,
+) => {
+   const booking = await Booking.findById(bookingId);
+
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found.");
+   }
+
+   if (booking.company.toString() !== companyUser._id.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This booking does not belong to your company.",
+      );
+   }
+
+   if (!booking.assignedDriver) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "No driver is currently assigned to this booking.",
+      );
+   }
+
+   if (
+      booking.bookingStatus === BookingStatus.CANCELLED ||
+      booking.bookingStatus === BookingStatus.COMPLETED ||
+      booking.bookingStatus === BookingStatus.APPROACHING_PICKUP ||
+      booking.bookingStatus === BookingStatus.AT_PICKUP ||
+      booking.bookingStatus === BookingStatus.IN_TRANSIT ||
+      booking.bookingStatus === BookingStatus.AT_DESTINATION ||
+      booking.bookingStatus === BookingStatus.RETURN_TRIP
+   ) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         `You cannot unassign a driver because the booking is already ${booking.bookingStatus.toLowerCase()}.`,
+      );
+   }
+
+   const previousDriverId = booking.assignedDriver;
+   booking.assignedDriver = undefined;
+   booking.bookingStatus = BookingStatus.NEW;
+
+   await booking.save();
+
+   // Notify the previously assigned driver
+   try {
+      getIO()
+         .to(`user_room_${previousDriverId}`)
+         .emit("driver_unassigned", booking);
+   } catch (error) {
+      console.error("Socket error on driver unassignment:", error);
+   }
+
+   return booking;
+};
+
 const assignBookingToSelf = async (driverUser: IAuthDoc, bookingId: string) => {
    const booking = await validateBookingForAssignment(bookingId);
 
@@ -770,7 +818,7 @@ const assignBookingToSelf = async (driverUser: IAuthDoc, bookingId: string) => {
    const conflictExists = await Booking.exists({
       assignedDriver: driverUser._id,
       rideDate: booking.rideDate,
-      rideTime: booking.rideTime,
+      desiredArrivalTime: booking.desiredArrivalTime,
       bookingStatus: BookingStatus.ASSIGNED,
    });
 
@@ -847,6 +895,59 @@ const rejectAssignment = async (driverUser: IAuthDoc, bookingId: string) => {
          .emit("booking_rejected", booking);
    } catch (error) {
       console.error("Socket error on booking rejection:", error);
+   }
+
+   return booking;
+};
+
+const cancelRideByDriver = async (driverUser: IAuthDoc, bookingId: string, cancelReason: string) => {
+   const booking = await Booking.findById(bookingId);
+
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found.");
+   }
+
+   if (booking.bookingStatus !== BookingStatus.ASSIGNED) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         `You cannot cancel a booking with status "${booking.bookingStatus}".`,
+      );
+   }
+
+   const driverProfile = await Driver.findOne({
+      user: driverUser._id,
+   });
+
+   if (!driverProfile) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found.");
+   }
+
+   if (booking.assignedDriver?.toString() !== driverUser._id.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This booking is not assigned to you.",
+      );
+   }
+
+   if (!cancelReason) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "A reason must be provided to cancel the ride.",
+      );
+   }
+
+   booking.bookingStatus = BookingStatus.CANCELLED;
+   booking.cancelReason = cancelReason;
+
+   await booking.save();
+
+   // Notify the company in real-time that driver cancelled
+   try {
+      getIO()
+         .to(`company_room_${booking.company}`)
+         .emit("booking_cancelled", booking);
+   } catch (error) {
+      console.error("Socket error on booking cancellation:", error);
    }
 
    return booking;
@@ -1229,12 +1330,21 @@ const cashReceiveForBookingByID = async (
 };
 
 // ** Start Booking Live Tracking**
-const startBookingByDriver = async (
+const updateBookingStatusByDriver = async (
    driverUser: IAuthDoc,
    bookingId: string,
+   status: string,
    driverCoords: { longitude: number; latitude: number },
 ) => {
    const { longitude: driverLng, latitude: driverLat } = driverCoords;
+
+   if (driverLat < -90 || driverLat > 90 || driverLng < -180 || driverLng > 180) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Invalid coordinates provided.");
+   }
+
+   if (!BookingStatusValues.includes(status as any)) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Invalid status provided.");
+   }
 
    const booking = await Booking.findById(bookingId);
    if (!booking) {
@@ -1254,28 +1364,46 @@ const startBookingByDriver = async (
       );
    }
 
-   // 2. Booking Status checking:
-   if (booking.bookingStatus !== BookingStatus.ASSIGNED) {
+   // 2. Booking Status checking (Strict sequential transition):
+   const validNextStatus: Record<string, string[]> = {
+      [BookingStatus.ASSIGNED]: [BookingStatus.APPROACHING_PICKUP, BookingStatus.CANCELLED],
+      [BookingStatus.APPROACHING_PICKUP]: [BookingStatus.AT_PICKUP, BookingStatus.CANCELLED],
+      [BookingStatus.AT_PICKUP]: [BookingStatus.IN_TRANSIT, BookingStatus.CANCELLED],
+      [BookingStatus.IN_TRANSIT]: [BookingStatus.AT_DESTINATION, BookingStatus.CANCELLED],
+      [BookingStatus.AT_DESTINATION]: [BookingStatus.RETURN_TRIP, BookingStatus.COMPLETED],
+      [BookingStatus.WAITING]: [BookingStatus.RETURN_TRIP, BookingStatus.CANCELLED],
+      [BookingStatus.RETURN_TRIP]: [BookingStatus.COMPLETED],
+   };
+
+   const allowedTransitions = validNextStatus[booking.bookingStatus as string] || [];
+   if (!allowedTransitions.includes(status)) {
       throw new AppError(
          httpStatus.BAD_REQUEST,
-         "This ride cannot be started.",
+         `Invalid status transition from ${booking.bookingStatus} to ${status}.`,
       );
    }
 
    // 2.5 Check if the current date is before the ride date
-   const today = new Date();
-   today.setUTCHours(0, 0, 0, 0);
-   const scheduledDate = new Date(booking.rideDate);
-   scheduledDate.setUTCHours(0, 0, 0, 0);
-
-   if (today.getTime() < scheduledDate.getTime()) {
-      throw new AppError(
-         httpStatus.BAD_REQUEST,
-         "You cannot start the ride before the scheduled ride date.",
-      );
+   if (status === BookingStatus.APPROACHING_PICKUP) {
+      const scheduledDate = new Date(booking.rideDate);
+      if (booking.desiredArrivalTime) {
+         const parts = booking.desiredArrivalTime.split(":");
+         const hours = Number(parts[0] || 0);
+         const minutes = Number(parts[1] || 0);
+         scheduledDate.setUTCHours(hours, minutes, 0, 0);
+      }
+      
+      const twoHoursBefore = new Date(scheduledDate.getTime() - 2 * 60 * 60 * 1000);
+      if (new Date().getTime() < twoHoursBefore.getTime()) {
+         throw new AppError(
+            httpStatus.BAD_REQUEST,
+            "You cannot start the ride more than 2 hours before the scheduled time.",
+         );
+      }
    }
 
-   if (booking.bookingType === "private") {
+   // Only enforce payment checks when trying to complete the ride
+   if (status === BookingStatus.COMPLETED && booking.bookingType === "private") {
       const privateBooking = await PrivateBooking.findOne({
          _id: booking?._id,
       });
@@ -1285,31 +1413,40 @@ const startBookingByDriver = async (
          privateBooking.paymentStatus !== BookingPaymentStatus.PAID
       ) {
          throw new AppError(
-            httpStatus.NOT_FOUND,
-            "Booking payment is pending. Please receive the cash.",
+            httpStatus.BAD_REQUEST,
+            "Booking payment is pending. Please receive the cash before completing the ride.",
          );
       }
    }
 
-   // 3. driver coordinates within 50  km
-   const [pickupLng, pickupLat] = booking.pickupLocation.coordinates;
+   // 3. Distance calculation & Geofencing target logic
+   let targetLng = 0;
+   let targetLat = 0;
 
-   // 4. Distance calculation :
+   if (status === BookingStatus.AT_PICKUP || (status === BookingStatus.COMPLETED && booking.tripIntent === "ROUND_TRIP")) {
+      // For picking up, or returning to pickup on a round trip
+      [targetLng, targetLat] = booking.pickupLocation.coordinates;
+   } else if (status === BookingStatus.AT_DESTINATION || (status === BookingStatus.COMPLETED && booking.tripIntent !== "ROUND_TRIP")) {
+      // For dropping off
+      [targetLng, targetLat] = booking.destinationLocation.coordinates;
+   } else {
+      // Default to pickup location for arbitrary distance checks during transit
+      [targetLng, targetLat] = booking.pickupLocation.coordinates;
+   }
+
    const distanceInKm = calculateDistance(
       driverLng,
       driverLat,
-      pickupLng,
-      pickupLat,
+      targetLng,
+      targetLat,
    );
    const distanceInMeters = distanceInKm * 1000;
 
-   console.log({ distanceInKm, distanceInMeters });
-
-   // Check  is distance 50 ? :
-   if (distanceInMeters > 100) {
+   // Check if distance is <= 100m for arrival statuses
+   if ((status === BookingStatus.AT_PICKUP || status === BookingStatus.AT_DESTINATION || status === BookingStatus.COMPLETED) && distanceInMeters > 100) {
       throw new AppError(
          httpStatus.BAD_REQUEST,
-         `Sie müssen sich am Abholort befinden, um die Fahrt zu starten. Sie sind aktuell ca. ${Math.round(distanceInMeters)} Meter entfernt (maximal zulässiger Abstand: 100 Meter).`,
+         `Sie müssen sich am Zielort befinden, um diesen Status zu setzen. Sie sind aktuell ca. ${Math.round(distanceInMeters)} Meter entfernt (maximal zulässiger Abstand: 100 Meter).`,
       );
    }
 
@@ -1317,36 +1454,40 @@ const startBookingByDriver = async (
    try {
       session.startTransaction();
 
-      booking.bookingStatus = BookingStatus.STARTED;
+      booking.bookingStatus = status as any;
+      if (status === BookingStatus.COMPLETED) {
+          booking.completedAt = new Date();
+      }
       const updatedBooking = await booking.save({ session });
 
       const coordinatesStringArray =
          booking.pickupLocation.coordinates.map(String);
 
+      const isEnded = status === BookingStatus.COMPLETED || status === BookingStatus.CANCELLED;
+      
       const tracking = await TrackingState.findOneAndUpdate(
          { booking: booking._id },
          {
-            $set: {
+            $set: { running: !isEnded },
+            $setOnInsert: {
                address: booking.pickupAddress,
                addressLocation: {
                   type: "Point",
                   coordinates: coordinatesStringArray,
                },
                progress: 0.0,
-               running: true,
-            },
+            }
          },
          { returnDocument: "after", upsert: true, session },
       );
 
       await session.commitTransaction();
-      await session.endSession();
-
       return { booking: updatedBooking, tracking };
    } catch (error) {
       await session.abortTransaction();
-      await session.endSession();
       throw error;
+   } finally {
+      await session.endSession();
    }
 };
 
@@ -1367,7 +1508,9 @@ export const BookingServices = {
    assignDriverByCompany,
    assignBookingToSelf,
    rejectAssignment,
+   cancelRideByDriver,
    cashReceiveForBookingByID,
-   startBookingByDriver,
+   updateBookingStatusByDriver,
    getBookingByIdPublic,
+   unassignDriverByCompany,
 };
