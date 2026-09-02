@@ -89,7 +89,7 @@ const getAdminOverview = async () => {
                      { $count: "count" },
                   ],
                   started: [
-                     { $match: { bookingStatus: BookingStatus.STARTED } },
+                     { $match: { bookingStatus: BookingStatus.IN_TRANSIT } },
                      { $count: "count" },
                   ],
                   completed: [
@@ -197,7 +197,7 @@ const getCompanyOverview = async (companyAuthId: string) => {
                   { $count: "count" },
                ],
                started: [
-                  { $match: { bookingStatus: BookingStatus.STARTED } },
+                  { $match: { bookingStatus: BookingStatus.IN_TRANSIT } },
                   { $count: "count" },
                ],
                completed: [

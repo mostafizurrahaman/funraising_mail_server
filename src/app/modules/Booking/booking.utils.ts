@@ -67,9 +67,9 @@ export const calculateDistance = (
 
 // ** Ride date time *
 
-export const prepareRideDateTime = (rideDate: string, rideTime: string) => {
-   // Combine date and 12-hour time
-   const rideAtMoment = moment(`${rideDate} ${rideTime}`, "YYYY-MM-DD hh:mm A");
+export const prepareRideDateTime = (rideDate: string, desiredArrivalTime: string) => {
+   // Combine date and 24-hour time
+   const rideAtMoment = moment(`${rideDate} ${desiredArrivalTime}`, "YYYY-MM-DD HH:mm");
 
    if (!rideAtMoment.isValid()) {
       throw new Error("Invalid ride date or ride time");
@@ -77,7 +77,17 @@ export const prepareRideDateTime = (rideDate: string, rideTime: string) => {
 
    return {
       rideDate: rideAtMoment.clone().startOf("day").toDate(),
-      rideTime,
+      desiredArrivalTime,
       rideAt: rideAtMoment.toDate(),
    };
+};
+
+export const calculatePickupTime = (arrivalTime: string, tripDurationMinutes: number): string => {
+   const arrivalMoment = moment(arrivalTime, "HH:mm");
+   if (!arrivalMoment.isValid()) {
+      return arrivalTime;
+   }
+   // Subtract duration + 15 mins buffer
+   arrivalMoment.subtract(tripDurationMinutes + 15, "minutes");
+   return arrivalMoment.format("HH:mm");
 };

@@ -10,6 +10,7 @@ import httpStatus from "http-status";
 import type { PipelineStage } from "mongoose";
 import { getUserFromRequest } from "../../utils";
 import { Auth } from "../Auth/auth.model";
+import { GlobalSurcharge } from "../GlobalSurcharge/globalSurcharge.model";
 
 const createSurchargeIntoDB = async (
    user: IAuthDoc,
@@ -20,24 +21,32 @@ const createSurchargeIntoDB = async (
    // ? slugify the slug:
    const slug = slugify(label);
 
+   // Verify the global surcharge exists
+   const globalSurcharge = await GlobalSurcharge.findOne({ labelSlug: slug });
+   if (!globalSurcharge) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "Invalid surcharge label. It must be an Admin-defined charge module.",
+      );
+   }
+
    // ? Check surcharge already exists with this slug:
    const existingSurcharge = await Surcharge.findOne({
-      labelSlug: slug,
+      globalSurcharge: globalSurcharge._id,
       user: user?._id,
    });
 
    if (existingSurcharge) {
       throw new AppError(
          httpStatus.NOT_FOUND,
-         "Already have a surcharge with this slug!",
+         "Already have a surcharge with this label!",
       );
    }
 
    // ? Create charge :
    const surcharge = await Surcharge.create({
       user: user?._id,
-      label,
-      labelSlug: slug,
+      globalSurcharge: globalSurcharge._id,
       amount,
    });
 
@@ -62,31 +71,8 @@ const updateSurchargeIntoDBById = async (
       );
    }
 
-   const isLabelChanged =
-      payload.label !== undefined &&
-      slugify(payload.label) !== existingSurcharge.labelSlug;
-
-   if (isLabelChanged) {
-      const labelSlug = slugify(payload.label);
-      const duplicateSurcharge = await Surcharge.findOne({
-         _id: {
-            $ne: existingSurcharge?._id,
-         },
-         user: user?._id,
-         labelSlug,
-      });
-
-      if (duplicateSurcharge) {
-         throw new AppError(
-            httpStatus.NOT_FOUND,
-            "A surcharge with this label already exists.",
-         );
-      }
-
-      existingSurcharge.label = payload.label;
-      existingSurcharge.labelSlug = labelSlug;
-   }
-
+   // The company is only allowed to update the numeric amount.
+   // We ignore any attempt to update the label.
    if (payload.amount !== undefined) existingSurcharge.amount = payload.amount;
 
    existingSurcharge.save({
@@ -133,6 +119,31 @@ const getAllSurchargeFromDB = async (companyId: string) => {
       {
          $match: {
             user: user?._id,
+         },
+      },
+      {
+         $lookup: {
+            from: "globalsurcharges",
+            localField: "globalSurcharge",
+            foreignField: "_id",
+            as: "globalSurchargeDoc",
+         },
+      },
+      {
+         $unwind: {
+            path: "$globalSurchargeDoc",
+            preserveNullAndEmptyArrays: true,
+         },
+      },
+      {
+         $addFields: {
+            label: "$globalSurchargeDoc.label",
+            labelSlug: "$globalSurchargeDoc.labelSlug",
+         },
+      },
+      {
+         $project: {
+            globalSurchargeDoc: 0,
          },
       },
    ];

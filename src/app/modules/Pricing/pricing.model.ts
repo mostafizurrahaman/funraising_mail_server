@@ -3,12 +3,7 @@ import type { IPricingDoc } from "./pricing.interface";
 
 const pricingSchema = new Schema<IPricingDoc>(
    {
-      user: {
-         type: Types.ObjectId,
-         ref: "Auth",
-         required: true,
-         unique: true,
-      },
+
       baseFare: {
          type: Number,
          required: true,

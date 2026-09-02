@@ -3,32 +3,29 @@ import { catchAsync, getUserFromRequest, sendResponse } from "../../utils";
 import { PricingServices } from "./pricing.services";
 
 const updateAndCreatePricing = catchAsync(async (req, res) => {
-   const user = await getUserFromRequest(req);
-   const result = await PricingServices.updateAndCreatePricing(user, req.body);
+   const result = await PricingServices.updateAndCreatePricing(req.body);
 
    sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
-      message: "Pricing setup for company successfully!",
+      message: "Global pricing setup successfully!",
       data: result,
    });
 });
 
 const getPricingForCompany = catchAsync(async (req, res) => {
-   const user = await getUserFromRequest(req);
-   const result = await PricingServices.getPricingForCompany(user);
+   const result = await PricingServices.getPricingForCompany();
 
    sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
-      message: "Your company pricing retrieved successfully.",
+      message: "Global pricing retrieved successfully.",
       data: result,
    });
 });
 
 const getPublicPricingByCompanyId = catchAsync(async (req, res) => {
-   const { companyId } = req.params;
-   const result = await PricingServices.getPublicPricingByCompanyId(companyId as string);
+   const result = await PricingServices.getPublicPricingByCompanyId();
 
    sendResponse(res, {
       success: true,

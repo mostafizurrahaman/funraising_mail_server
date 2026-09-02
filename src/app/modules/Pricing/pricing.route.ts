@@ -9,12 +9,12 @@ const router = Router();
 
 router.post(
    "/",
-   auth(AuthRole.COMPANY),
+   auth(AuthRole.ADMIN, AuthRole.SUPER_ADMIN),
    validateRequest(PricingValidationSchema.updateOrCreateSchema),
    PricingController.updateAndCreatePricing,
 );
 
-router.get("/", auth(AuthRole.COMPANY), PricingController.getPricingForCompany);
+router.get("/", auth(AuthRole.COMPANY, AuthRole.ADMIN, AuthRole.SUPER_ADMIN), PricingController.getPricingForCompany);
 router.get("/company/:companyId", PricingController.getPublicPricingByCompanyId);
 
 export const PricingRoutes = router;

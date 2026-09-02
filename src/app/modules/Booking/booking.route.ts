@@ -42,10 +42,25 @@ router.post(
 );
 
 router.patch(
+   "/:id/verify-payment",
+   auth(AuthRole.COMPANY, AuthRole.SUPER_ADMIN),
+   validateRequest(BookingValidationSchema.verifyPayment),
+   BookingController.verifyPayment,
+);
+
+router.patch(
    "/:id/assign-driver",
    auth(AuthRole.COMPANY),
    validateRequest(BookingValidationSchema.assignDriverByCompanySchema),
    BookingController.assignDriverByCompany,
+);
+
+router.patch(
+   "/:id/unassign-driver",
+   auth(AuthRole.COMPANY),
+   // Use a similar param validation (ID) schema
+   validateRequest(BookingValidationSchema.rejectBookingByIDSchema), 
+   BookingController.unassignDriverByCompany,
 );
 
 router.patch(
@@ -63,6 +78,13 @@ router.patch(
 );
 
 router.patch(
+   "/:id/cancel",
+   auth(AuthRole.DRIVER),
+   validateRequest(BookingValidationSchema.cancelRideByDriverSchema),
+   BookingController.cancelRideByDriver,
+);
+
+router.patch(
    "/:id/cash-receive",
    auth(AuthRole.DRIVER),
    validateRequest(BookingValidationSchema.cashReceiveForBookingByIDSchema),
@@ -70,7 +92,7 @@ router.patch(
 );
 
 router.patch(
-   "/:id/start",
+   "/:id/status",
    auth(AuthRole.DRIVER),
    validateRequest(BookingValidationSchema.startBookingSchema),
    BookingController.startBooking,

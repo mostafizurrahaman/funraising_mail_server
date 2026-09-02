@@ -6,56 +6,46 @@ import httpStatus from "http-status";
 
 // ** create and update base fare:
 const updateAndCreatePricing = async (
-   user: IAuthDoc,
    payload: TUpdateOrCreatePayload,
 ) => {
-   const existingPricing = await Pricing.findOne({
-      user: user._id,
-   });
+   const existingPricing = await Pricing.findOne();
 
    if (existingPricing) {
-      existingPricing.baseFare = payload.baseFare || existingPricing.baseFare;
-      existingPricing.perKm = payload.perKm || existingPricing.perKm;
+      existingPricing.baseFare = payload.baseFare ?? existingPricing.baseFare;
+      existingPricing.perKm = payload.perKm ?? existingPricing.perKm;
 
       await existingPricing.save();
 
       return existingPricing;
    }
 
-   const pricing = await Pricing.create({
-      user: user._id,
-      ...payload,
-   });
+   const pricing = await Pricing.create(payload);
 
    return pricing;
 };
 
 // ** Get base for this company:
 
-const getPricingForCompany = async (user: IAuthDoc) => {
-   const existingPricing = await Pricing.findOne({
-      user: user._id,
-   });
+const getPricingForCompany = async () => {
+   const existingPricing = await Pricing.findOne();
 
    if (!existingPricing) {
       throw new AppError(
          httpStatus.NOT_FOUND,
-         "Please setup pricing for you company!",
+         "Pricing has not been setup yet!",
       );
    }
 
    return existingPricing;
 };
 
-const getPublicPricingByCompanyId = async (companyId: string) => {
-   const existingPricing = await Pricing.findOne({
-      user: companyId,
-   }).select("baseFare perKm -_id");
+const getPublicPricingByCompanyId = async () => {
+   const existingPricing = await Pricing.findOne().select("baseFare perKm -_id");
 
    if (!existingPricing) {
       throw new AppError(
          httpStatus.NOT_FOUND,
-         "Pricing not found for this company.",
+         "Pricing not found.",
       );
    }
 
