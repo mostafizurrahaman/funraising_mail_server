@@ -53,7 +53,7 @@ const signupSchema = z.object({
             .positive("Radius must be greater than 0 km."),
          postalCode: requiredString("Postal code"),
          fleetSize: positiveNumber("Fleet size"),
-         note: optionalString("Note"),
+         note: optionalString("Note").default(""),
       }),
 });
 
