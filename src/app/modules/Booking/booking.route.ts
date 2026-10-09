@@ -71,6 +71,13 @@ router.patch(
 );
 
 router.patch(
+   "/:id/accept",
+   auth(AuthRole.DRIVER),
+   validateRequest(BookingValidationSchema.rejectBookingByIDSchema),
+   BookingController.acceptTheAssignment,
+);
+
+router.patch(
    "/:id/reject",
    auth(AuthRole.DRIVER),
    validateRequest(BookingValidationSchema.rejectBookingByIDSchema),
