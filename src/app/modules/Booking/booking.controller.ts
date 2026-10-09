@@ -137,6 +137,19 @@ const rejectTheAssignment = catchAsync(async (req, res) => {
    });
 });
 
+const acceptTheAssignment = catchAsync(async (req, res) => {
+   const user = await getUserFromRequest(req);
+   const bookingId = req.params.id as string;
+   const result = await BookingServices.acceptAssignment(user, bookingId);
+
+   sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Assignment accepted successfully.",
+      data: result,
+   });
+});
+
 const cancelRideByDriver = catchAsync(async (req, res) => {
    const user = await getUserFromRequest(req);
    const bookingId = req.params.id as string;
@@ -203,6 +216,7 @@ export const BookingController = {
    verifyPayment,
    assignDriverByCompany,
    assignBookingToSelf,
+   acceptTheAssignment,
    rejectTheAssignment,
    cancelRideByDriver,
    startBooking,

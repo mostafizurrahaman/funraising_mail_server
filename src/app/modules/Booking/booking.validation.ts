@@ -29,6 +29,10 @@ const baseBookingValidation = {
    patientName: requiredString("Patient Name")
       .min(3, { message: "Patient name must be at least 3 characters long" })
       .max(200, { message: "Patient name cannot exceed 200 characters" }),
+   email: optionalString("Email").refine(
+      (val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+      { message: "Invalid email format" }
+   ),
    phone: requiredString("Phone Number").regex(GERMANY_PHONE_NUMBER_REGEX, {
       message: "Phone number should be valid german number.",
    }),
@@ -65,11 +69,9 @@ const baseBookingValidation = {
       message: "Desired arrival time must be in 24-hour format (HH:MM), e.g., 14:30",
    }),
    tripIntent: enumString(["ONE_WAY", "ROUND_TRIP"], "Trip Intent"),
-   notes: requiredString("Notes")
-      .max(500, {
+   notes: z.string().max(500, {
          message: "Notes cannot exceed 500 characters",
-      })
-      .optional(),
+      }).optional(),
    companyId: requiredMongooseId("Company ID"),
 };
 

@@ -900,7 +900,7 @@ const rejectAssignment = async (driverUser: IAuthDoc, bookingId: string) => {
    return booking;
 };
 
-const cancelRideByDriver = async (driverUser: IAuthDoc, bookingId: string, cancelReason: string) => {
+const acceptAssignment = async (driverUser: IAuthDoc, bookingId: string) => {
    const booking = await Booking.findById(bookingId);
 
    if (!booking) {
@@ -908,6 +908,68 @@ const cancelRideByDriver = async (driverUser: IAuthDoc, bookingId: string, cance
    }
 
    if (booking.bookingStatus !== BookingStatus.ASSIGNED) {
+      throw new AppError(
+         httpStatus.BAD_REQUEST,
+         `You cannot accept a booking with status "${booking.bookingStatus}".`,
+      );
+   }
+
+   const driverProfile = await Driver.findOne({
+      user: driverUser._id,
+   });
+
+   if (!driverProfile) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found.");
+   }
+
+   if (driverProfile.company.toString() !== booking.company.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This booking does not belong to your company.",
+      );
+   }
+
+   if (booking.assignedDriver?.toString() !== driverUser._id.toString()) {
+      throw new AppError(
+         httpStatus.FORBIDDEN,
+         "This booking is not assigned to you.",
+      );
+   }
+
+   // Accept assignment
+   booking.bookingStatus = BookingStatus.ACCEPTED;
+
+   await booking.save();
+
+   // Notify the company in real-time that driver accepted
+   try {
+      getIO()
+         .to(`company_room_${booking.company}`)
+         .emit("booking_accepted", booking);
+   } catch (error) {
+      console.error("Socket error on booking acceptance:", error);
+   }
+
+   return booking;
+};
+
+const cancelRideByDriver = async (driverUser: IAuthDoc, bookingId: string, cancelReason: string) => {
+   const booking = await Booking.findById(bookingId);
+
+   if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found.");
+   }
+
+   const cancellableStatuses = [
+      BookingStatus.ASSIGNED, 
+      BookingStatus.ACCEPTED, 
+      BookingStatus.APPROACHING_PICKUP, 
+      BookingStatus.AT_PICKUP, 
+      BookingStatus.IN_TRANSIT,
+      BookingStatus.WAITING
+   ];
+
+   if (!cancellableStatuses.includes(booking.bookingStatus as any)) {
       throw new AppError(
          httpStatus.BAD_REQUEST,
          `You cannot cancel a booking with status "${booking.bookingStatus}".`,
@@ -939,7 +1001,25 @@ const cancelRideByDriver = async (driverUser: IAuthDoc, bookingId: string, cance
    booking.bookingStatus = BookingStatus.CANCELLED;
    booking.cancelReason = cancelReason;
 
-   await booking.save();
+   const session = await mongoose.startSession();
+   try {
+      session.startTransaction();
+
+      await booking.save({ session });
+
+      await TrackingState.findOneAndUpdate(
+         { booking: booking._id },
+         { $set: { running: false } },
+         { session }
+      );
+
+      await session.commitTransaction();
+   } catch (error) {
+      await session.abortTransaction();
+      throw error;
+   } finally {
+      await session.endSession();
+   }
 
    // Notify the company in real-time that driver cancelled
    try {
@@ -1366,7 +1446,8 @@ const updateBookingStatusByDriver = async (
 
    // 2. Booking Status checking (Strict sequential transition):
    const validNextStatus: Record<string, string[]> = {
-      [BookingStatus.ASSIGNED]: [BookingStatus.APPROACHING_PICKUP, BookingStatus.CANCELLED],
+      [BookingStatus.ASSIGNED]: [BookingStatus.ACCEPTED, BookingStatus.APPROACHING_PICKUP, BookingStatus.CANCELLED],
+      [BookingStatus.ACCEPTED]: [BookingStatus.APPROACHING_PICKUP, BookingStatus.CANCELLED],
       [BookingStatus.APPROACHING_PICKUP]: [BookingStatus.AT_PICKUP, BookingStatus.CANCELLED],
       [BookingStatus.AT_PICKUP]: [BookingStatus.IN_TRANSIT, BookingStatus.CANCELLED],
       [BookingStatus.IN_TRANSIT]: [BookingStatus.AT_DESTINATION, BookingStatus.CANCELLED],
@@ -1482,6 +1563,17 @@ const updateBookingStatusByDriver = async (
       );
 
       await session.commitTransaction();
+
+      try {
+         getIO().to(`booking_room_${bookingId}`).emit("ride-status-changed", {
+            bookingId,
+            status: updatedBooking.bookingStatus,
+            tracking: tracking,
+         });
+      } catch (error) {
+         console.error("Socket error on status update:", error);
+      }
+
       return { booking: updatedBooking, tracking };
    } catch (error) {
       await session.abortTransaction();
@@ -1507,6 +1599,7 @@ export const BookingServices = {
    verifyPayment,
    assignDriverByCompany,
    assignBookingToSelf,
+   acceptAssignment,
    rejectAssignment,
    cancelRideByDriver,
    cashReceiveForBookingByID,
