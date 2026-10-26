@@ -1464,24 +1464,6 @@ const updateBookingStatusByDriver = async (
       );
    }
 
-   // 2.5 Check if the current date is before the ride date
-   if (status === BookingStatus.APPROACHING_PICKUP) {
-      const scheduledDate = new Date(booking.rideDate);
-      if (booking.desiredArrivalTime) {
-         const parts = booking.desiredArrivalTime.split(":");
-         const hours = Number(parts[0] || 0);
-         const minutes = Number(parts[1] || 0);
-         scheduledDate.setUTCHours(hours, minutes, 0, 0);
-      }
-      
-      const twoHoursBefore = new Date(scheduledDate.getTime() - 2 * 60 * 60 * 1000);
-      if (new Date().getTime() < twoHoursBefore.getTime()) {
-         throw new AppError(
-            httpStatus.BAD_REQUEST,
-            "You cannot start the ride more than 2 hours before the scheduled time.",
-         );
-      }
-   }
 
    // Only enforce payment checks when trying to complete the ride
    if (status === BookingStatus.COMPLETED && booking.bookingType === "private") {
