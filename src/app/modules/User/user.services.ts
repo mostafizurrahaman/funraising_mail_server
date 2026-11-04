@@ -1,6 +1,6 @@
 import { Auth } from "../Auth/auth.model";
 
-import type { PipelineStage } from "mongoose";
+import { Types, type PipelineStage } from "mongoose";
 import type {
    TGetAllUserQueryType,
    TUpdateUserStatusPayloadType,
@@ -109,7 +109,14 @@ const getAllUserFromDB = async (query: TGetAllUserQueryType) => {
             $cond: [
                { $eq: ["$role", AuthRole.COMPANY] },
                "$companyDetails.companyCode",
-               "$$REMOVE",
+               "$REMOVE",
+            ],
+         },
+         slug: {
+            $cond: [
+               { $eq: ["$role", AuthRole.COMPANY] },
+               "$companyDetails.slug",
+               "$REMOVE",
             ],
          },
          companyName: {
@@ -398,9 +405,20 @@ const updateStatus = async (
 
 // Get the company by company code:
 const getCompanyByCompanyCode = async (companyCode: string) => {
-   // ?? Check is there any company exists with this id?:
+   const searchConditions: any[] = [
+      { companyCode: companyCode },
+      { slug: companyCode.toLowerCase() },
+   ];
+
+   if (Types.ObjectId.isValid(companyCode)) {
+      searchConditions.push(
+         { _id: new Types.ObjectId(companyCode) },
+         { user: new Types.ObjectId(companyCode) }
+      );
+   }
+
    const company = await Company.findOne({
-      companyCode: companyCode,
+      $or: searchConditions,
    }).populate<{ user: IAuthDoc }>("user");
 
    if (!company) {
