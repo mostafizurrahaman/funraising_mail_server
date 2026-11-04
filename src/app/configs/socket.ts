@@ -111,8 +111,24 @@ async function getOrFetchBookingCache(bookingId: string): Promise<CachedBooking 
    return cached;
 }
 
-function invalidateBookingCache(bookingId: string): void {
+export function invalidateBookingCache(bookingId: string): void {
    bookingCache.delete(bookingId);
+}
+
+export function notifyRideStatusChanged(
+   bookingId: string,
+   status: string,
+   tracking?: any,
+): void {
+   invalidateBookingCache(bookingId);
+   if (io) {
+      const roomName = `booking_room_${bookingId}`;
+      io.to(roomName).emit("ride-status-changed", {
+         bookingId,
+         status,
+         tracking,
+      });
+   }
 }
 
 // ================= SOCKET INITIALIZER =================
@@ -304,10 +320,15 @@ export const initSocket = (httpServer: HTTPServer) => {
                   BookingStatus.RETURN_TRIP,
                ];
                if (!activeStates.includes(cached.bookingStatus)) {
-                  return socket.emit("app-error", {
-                     message:
-                        "Live tracking is suspended. Please start the ride first.",
-                  });
+                  // Re-check database directly in case of cache desync from REST API calls
+                  const freshBooking = await Booking.findById(bookingId).lean();
+                  if (freshBooking && activeStates.includes(freshBooking.bookingStatus)) {
+                     cached.bookingStatus = freshBooking.bookingStatus;
+                     bookingCache.set(bookingId, cached);
+                  } else {
+                     // Silently return instead of throwing an app-error toast on periodic GPS pings
+                     return;
+                  }
                }
 
                const { pickupLat, pickupLng, destLat, destLng } = cached;

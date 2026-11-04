@@ -9,6 +9,7 @@ import type {
    TVerifyPayment,
 } from "./booking.validation";
 import type { TMulterFile } from "../../types/multer.types";
+import { notifyRideStatusChanged } from "../../configs/socket";
 
 const createGkbBooking = catchAsync(async (req, res) => {
    console.log(req.files);
@@ -156,6 +157,8 @@ const cancelRideByDriver = catchAsync(async (req, res) => {
    const { cancelReason } = req.body;
    const result = await BookingServices.cancelRideByDriver(user, bookingId, cancelReason);
 
+   notifyRideStatusChanged(bookingId, result.bookingStatus);
+
    sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
@@ -188,6 +191,8 @@ const startBooking = catchAsync(async (req, res) => {
       longitude,
       latitude,
    });
+
+   notifyRideStatusChanged(bookingId, result.booking.bookingStatus, result.tracking);
 
    sendResponse(res, {
       success: true,
