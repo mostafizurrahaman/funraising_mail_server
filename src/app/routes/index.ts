@@ -14,6 +14,9 @@ import { DriverPortalRoutes } from "../modules/DriverPortal";
 const router = express.Router();
 
 import { GlobalSurchargeRoutes } from "../modules/GlobalSurcharge/globalSurcharge.route";
+import { FAQRoutes } from "../modules/FAQ";
+import { ContentRoutes } from "../modules/Content";
+import { SupportRoutes } from "../modules/Support";
 
 const routes = [
    {
@@ -63,6 +66,18 @@ const routes = [
    {
       path: "/driver-portal",
       route: DriverPortalRoutes,
+   },
+   {
+      path: "/faq",
+      route: FAQRoutes,
+   },
+   {
+      path: "/content",
+      route: ContentRoutes,
+   },
+   {
+      path: "/support",
+      route: SupportRoutes,
    },
 ];
 
