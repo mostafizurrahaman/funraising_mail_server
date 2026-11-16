@@ -152,6 +152,11 @@ const getPostalCodeByCodeOrSlug = async (codeOrSlug: string) => {
    };
 };
 
+const getAllPostalCodeList = async () => {
+   const uniquePlzs = await PostalCode.distinct("postalCode");
+   return uniquePlzs;
+};
+
 const getPostalCodeStats = async () => {
    const total = await PostalCode.countDocuments();
    const uniquePlzs = await PostalCode.distinct("postalCode");
@@ -262,6 +267,7 @@ const seedPostalCodesFromJSON = async (customFilePath?: string) => {
 
 export const PostalCodeServices = {
    getAllPostalCodes,
+   getAllPostalCodeList,
    getPostalCodeByCodeOrSlug,
    getPostalCodeStats,
    seedPostalCodesFromJSON,
