@@ -17,6 +17,7 @@ import { GlobalSurchargeRoutes } from "../modules/GlobalSurcharge/globalSurcharg
 import { FAQRoutes } from "../modules/FAQ";
 import { ContentRoutes } from "../modules/Content";
 import { SupportRoutes } from "../modules/Support";
+import { PostalCodeRoutes } from "../modules/PostalCode";
 
 const routes = [
    {
@@ -78,6 +79,10 @@ const routes = [
    {
       path: "/support",
       route: SupportRoutes,
+   },
+   {
+      path: "/postal-codes",
+      route: PostalCodeRoutes,
    },
 ];
 
