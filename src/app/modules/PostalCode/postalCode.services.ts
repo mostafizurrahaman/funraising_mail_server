@@ -157,6 +157,52 @@ const getAllPostalCodeList = async () => {
    return uniquePlzs;
 };
 
+export const GERMAN_REGIONS_MAP: Record<string, string> = {
+   "baden-wuerttemberg": "Baden-Württemberg",
+   "bayern": "Bayern",
+   "berlin": "Berlin",
+   "brandenburg": "Brandenburg",
+   "bremen": "Bremen",
+   "hamburg": "Hamburg",
+   "hessen": "Hessen",
+   "mecklenburg-vorpommern": "Mecklenburg-Vorpommern",
+   "niedersachsen": "Niedersachsen",
+   "nordrhein-westfalen": "Nordrhein-Westfalen",
+   "rheinland-pfalz": "Rheinland-Pfalz",
+   "saarland": "Saarland",
+   "sachsen": "Sachsen",
+   "sachsen-anhalt": "Sachsen-Anhalt",
+   "schleswig-holstein": "Schleswig-Holstein",
+   "thueringen": "Thüringen",
+};
+
+const getPostalCodesByRegionSlug = async (regionSlug: string) => {
+   const normalizedSlug = regionSlug.toLowerCase().trim();
+   const adminName = GERMAN_REGIONS_MAP[normalizedSlug];
+
+   const filter: Record<string, any> = {};
+   if (adminName) {
+      filter.adminName = adminName;
+   } else {
+      filter.$or = [
+         { adminName: { $regex: new RegExp(`^${normalizedSlug}`, "i") } },
+         { adminCode: normalizedSlug.toUpperCase() },
+      ];
+   }
+
+   const docs = await PostalCode.find(filter)
+      .select("postalCode placeName slug updatedAt")
+      .sort({ postalCode: 1 })
+      .lean();
+
+   return {
+      region: adminName || regionSlug,
+      slug: normalizedSlug,
+      count: docs.length,
+      data: docs,
+   };
+};
+
 const getPostalCodeStats = async () => {
    const total = await PostalCode.countDocuments();
    const uniquePlzs = await PostalCode.distinct("postalCode");
@@ -268,6 +314,7 @@ const seedPostalCodesFromJSON = async (customFilePath?: string) => {
 export const PostalCodeServices = {
    getAllPostalCodes,
    getAllPostalCodeList,
+   getPostalCodesByRegionSlug,
    getPostalCodeByCodeOrSlug,
    getPostalCodeStats,
    seedPostalCodesFromJSON,

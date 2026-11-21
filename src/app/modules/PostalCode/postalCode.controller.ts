@@ -26,6 +26,20 @@ const getAllPostalCodeList = catchAsync(async (req, res) => {
    });
 });
 
+const getPostalCodesByRegion = catchAsync(async (req, res) => {
+   const { regionSlug } = req.params;
+   const result = await PostalCodeServices.getPostalCodesByRegionSlug(
+      regionSlug as string,
+   );
+
+   sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: `Postal codes for region "${regionSlug}" retrieved successfully!`,
+      data: result,
+   });
+});
+
 const getPostalCodeByCode = catchAsync(async (req, res) => {
    const { codeOrSlug } = req.params;
    const result = await PostalCodeServices.getPostalCodeByCodeOrSlug(
@@ -66,6 +80,7 @@ const seedPostalCodes = catchAsync(async (req, res) => {
 export const PostalCodeControllers = {
    getAllPostalCodes,
    getAllPostalCodeList,
+   getPostalCodesByRegion,
    getPostalCodeByCode,
    getPostalCodeStats,
    seedPostalCodes,
